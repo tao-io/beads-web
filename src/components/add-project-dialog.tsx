@@ -63,7 +63,7 @@ export function AddProjectDialog({
     setPathError(null);
 
     try {
-      const cleanPath = projectPath.trim().replace(/\/+$/, "");
+      const cleanPath = projectPath.trim().replace(/[/\\]+$/, "");
       const result = await api.fs.exists(`${cleanPath}/.beads`);
 
       if (!result.exists) {
@@ -85,7 +85,10 @@ export function AddProjectDialog({
       setShowNameInput(true);
     } catch (err) {
       console.error("Error validating path:", err);
-      setPathError("Could not access the specified path. Please check it exists.");
+      const message = err instanceof Error ? err.message : String(err);
+      setPathError(message.includes("API error")
+        ? "Could not access the specified path. Please check it exists and is on a local drive."
+        : "Could not access the specified path. Please check it exists.");
     } finally {
       setIsValidating(false);
     }
