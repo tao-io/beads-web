@@ -1,6 +1,9 @@
 //! Beads API route handlers.
 //!
-//! Provides endpoints for reading and modifying beads from .beads/issues.jsonl files.
+//! Provides endpoints for reading beads data.
+//! Supports two data sources:
+//! - **Dolt** (preferred): reads via `bd list --json` + `bd sql` CLI commands
+//! - **JSONL** (fallback): reads from `.beads/issues.jsonl` if bd CLI is unavailable
 
 use axum::{
     extract::Query,
@@ -13,6 +16,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
+use tokio::process::Command;
 
 use super::validate_path_security;
 
@@ -174,10 +179,96 @@ pub struct Comment {
     pub created_at: String,
 }
 
+/// Runs a `bd` CLI command and returns stdout.
+async fn run_bd(args: &[&str], cwd: &Path) -> Result<String, String> {
+    let result = tokio::time::timeout(
+        Duration::from_secs(30),
+        Command::new("bd").args(args).current_dir(cwd).output(),
+    )
+    .await;
+
+    match result {
+        Ok(Ok(output)) => {
+            if output.status.success() {
+                String::from_utf8(output.stdout)
+                    .map_err(|e| format!("Invalid UTF-8 in bd output: {}", e))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(format!("bd exited with {}: {}", output.status, stderr))
+            }
+        }
+        Ok(Err(e)) => Err(format!("Failed to run bd: {}", e)),
+        Err(_) => Err("bd command timed out after 30s".to_string()),
+    }
+}
+
+/// Reads beads from the Dolt database via `bd` CLI.
+///
+/// Calls `bd list --json` for issues and `bd sql` for comments,
+/// then merges them together.
+async fn read_beads_from_cli(project_path: &Path) -> Result<Vec<Bead>, String> {
+    // Get all beads
+    let list_output = run_bd(&["list", "--json"], project_path).await?;
+    let mut beads: Vec<Bead> = serde_json::from_str(&list_output)
+        .map_err(|e| format!("Failed to parse bd list output: {}", e))?;
+
+    // Get all comments
+    let comments_output = run_bd(
+        &["sql", "SELECT * FROM comments ORDER BY issue_id, id", "--json"],
+        project_path,
+    )
+    .await;
+
+    if let Ok(output) = comments_output {
+        if let Ok(comments) = serde_json::from_str::<Vec<Comment>>(&output) {
+            // Group comments by issue_id
+            let mut comments_map: HashMap<String, Vec<Comment>> = HashMap::new();
+            for comment in comments {
+                comments_map
+                    .entry(comment.issue_id.clone())
+                    .or_default()
+                    .push(comment);
+            }
+            // Merge into beads
+            for bead in &mut beads {
+                if let Some(bead_comments) = comments_map.remove(&bead.id) {
+                    bead.comments = Some(bead_comments);
+                }
+            }
+        } else {
+            tracing::warn!("Failed to parse comments from bd sql, continuing without comments");
+        }
+    } else {
+        tracing::warn!("Failed to fetch comments via bd sql, continuing without comments");
+    }
+
+    Ok(beads)
+}
+
+/// Reads beads from the JSONL file (fallback when bd CLI is unavailable).
+fn read_beads_from_jsonl(issues_path: &Path) -> Result<Vec<Bead>, String> {
+    let contents = std::fs::read_to_string(issues_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+
+    let mut beads = Vec::new();
+    for (line_num, line) in contents.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        match serde_json::from_str::<Bead>(line) {
+            Ok(bead) => beads.push(bead),
+            Err(e) => {
+                tracing::warn!("Failed to parse bead at line {}: {} - {}", line_num + 1, e, line);
+            }
+        }
+    }
+    Ok(beads)
+}
+
 /// GET /api/beads?path=/path/to/project
 ///
-/// Reads the .beads/issues.jsonl file from the specified project path
-/// and returns an array of beads.
+/// Reads beads from a project. Tries bd CLI (Dolt) first, falls back to JSONL.
 pub async fn read_beads(Query(params): Query<BeadsParams>) -> impl IntoResponse {
     let project_path = PathBuf::from(&params.path);
 
@@ -189,48 +280,41 @@ pub async fn read_beads(Query(params): Query<BeadsParams>) -> impl IntoResponse 
         );
     }
 
-    let issues_path = resolve_issues_path(&project_path);
-
-    // Check if the file exists
-    if !issues_path.exists() {
+    // Check that project has a .beads directory
+    let beads_dir = project_path.join(".beads");
+    if !beads_dir.exists() {
         return (
             StatusCode::NOT_FOUND,
-            Json(serde_json::json!({ "error": "No .beads/issues.jsonl found at the specified path" })),
+            Json(serde_json::json!({ "error": "No .beads directory found at the specified path" })),
         );
     }
 
-    // Read the file contents
-    let contents = match std::fs::read_to_string(&issues_path) {
-        Ok(c) => c,
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({ "error": format!("Failed to read file: {}", e) })),
-            );
+    // Try bd CLI first (Dolt database), fall back to JSONL
+    let mut beads = match read_beads_from_cli(&project_path).await {
+        Ok(b) => {
+            tracing::info!("Read {} beads from bd CLI for {}", b.len(), params.path);
+            b
         }
-    };
-
-    // Parse JSONL (each line is a JSON object)
-    let mut beads = Vec::new();
-    for (line_num, line) in contents.lines().enumerate() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-
-        match serde_json::from_str::<Bead>(line) {
-            Ok(bead) => beads.push(bead),
-            Err(e) => {
-                tracing::warn!(
-                    "Failed to parse bead at line {}: {} - {}",
-                    line_num + 1,
-                    e,
-                    line
+        Err(cli_err) => {
+            tracing::info!("bd CLI unavailable ({}), falling back to JSONL", cli_err);
+            let issues_path = resolve_issues_path(&project_path);
+            if !issues_path.exists() {
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(serde_json::json!({ "error": "No .beads/issues.jsonl found and bd CLI unavailable" })),
                 );
-                // Continue parsing other lines - graceful handling of malformed lines
+            }
+            match read_beads_from_jsonl(&issues_path) {
+                Ok(b) => b,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({ "error": e })),
+                    );
+                }
             }
         }
-    }
+    };
 
     // Post-process: Transform dependencies into parent_id, deps, relates_to, and children
     // Build a map of parent_id -> Vec<child_id>
@@ -393,6 +477,11 @@ fn compute_epic_status_from_children(child_statuses: &[&str]) -> Option<&'static
 /// * `Ok(Vec<String>)` - List of epic IDs that were updated
 /// * `Err(String)` - Error message if something went wrong
 pub fn recompute_epic_statuses(issues_path: &Path) -> Result<Vec<String>, String> {
+    // Skip if JSONL doesn't exist (Dolt mode — bd manages its own data)
+    if !issues_path.exists() {
+        return Ok(vec![]);
+    }
+
     // Read the file contents
     let contents = std::fs::read_to_string(issues_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
