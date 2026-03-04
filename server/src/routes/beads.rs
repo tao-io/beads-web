@@ -268,16 +268,38 @@ fn read_beads_from_jsonl(issues_path: &Path) -> Result<Vec<Bead>, String> {
     Ok(beads)
 }
 
+/// Dolt-only path prefix: `dolt://beads_dbname`
+const DOLT_PATH_PREFIX: &str = "dolt://";
+
 /// GET /api/beads?path=/path/to/project
+/// GET /api/beads?path=dolt://beads_dbname
 ///
-/// Reads beads from a project. Three-tier fallback:
-/// 1. Dolt SQL (direct MySQL connection)
-/// 2. bd CLI (`bd list --json`)
-/// 3. JSONL file (`.beads/issues.jsonl`)
+/// Reads beads from a project. For `dolt://` paths, reads directly from Dolt SQL.
+/// For filesystem paths, uses three-tier fallback: Dolt SQL → bd CLI → JSONL.
 pub async fn read_beads(
     Extension(dolt_manager): Extension<Arc<DoltManager>>,
     Query(params): Query<BeadsParams>,
 ) -> impl IntoResponse {
+    // Direct Dolt read for dolt:// paths (no filesystem needed)
+    if let Some(db_name) = params.path.strip_prefix(DOLT_PATH_PREFIX) {
+        if !dolt_manager.is_available() && !dolt_manager.check_server().await {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({ "error": "Dolt server is not running" })),
+            );
+        }
+        return match dolt_manager.read_beads(db_name).await {
+            Ok(beads) => {
+                let beads = post_process_beads(beads);
+                (StatusCode::OK, Json(serde_json::json!({ "beads": beads })))
+            }
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": e.to_string() })),
+            ),
+        };
+    }
+
     let project_path = PathBuf::from(&params.path);
 
     // Security: Validate path is within allowed directories
@@ -301,13 +323,12 @@ pub async fn read_beads(
     let mut skip_cli = false;
 
     // Tier 1: Try Dolt SQL (direct MySQL connection)
-    let mut beads = 'fallback: {
+    let beads = 'fallback: {
         if dolt_manager.is_available() {
             if let Some(db_name) = dolt::database_name_for_project(&project_path) {
                 match dolt_manager.read_beads(&db_name).await {
                     Ok(b) => break 'fallback b,
                     Err(crate::dolt::DoltError::DatabaseNotFound(_)) => {
-                        // DB not on this server — bd CLI won't find it either
                         tracing::debug!("Dolt database {} not found, skipping to JSONL", db_name);
                         skip_cli = true;
                     }
@@ -350,8 +371,12 @@ pub async fn read_beads(
         }
     };
 
-    // Post-process: Transform dependencies into parent_id, deps, relates_to, and children
-    // Build a map of parent_id -> Vec<child_id>
+    let beads = post_process_beads(beads);
+    (StatusCode::OK, Json(serde_json::json!({ "beads": beads })))
+}
+
+/// Post-processes beads: resolves dependencies, infers parent-child from ID patterns, sets children.
+fn post_process_beads(mut beads: Vec<Bead>) -> Vec<Bead> {
     let mut parent_to_children: std::collections::HashMap<String, Vec<String>> =
         std::collections::HashMap::new();
 
@@ -360,7 +385,6 @@ pub async fn read_beads(
         if let Some(raw_deps) = bead.dependencies.take() {
             match raw_deps {
                 RawDependencies::Legacy(legacy_deps) => {
-                    // Old format: extract parent-child, relates-to, and blocking deps
                     let mut blocking = Vec::new();
                     let mut related = Vec::new();
                     for dep in &legacy_deps {
@@ -388,7 +412,6 @@ pub async fn read_beads(
                     }
                 }
                 RawDependencies::StringIds(ids) => {
-                    // New format: dependencies are blocking deps (parent comes from `parent` field)
                     if !ids.is_empty() && bead.deps.is_none() {
                         bead.deps = Some(ids);
                     }
@@ -396,7 +419,6 @@ pub async fn read_beads(
             }
         }
 
-        // Record parent-child from `parent` field (new format, already deserialized via alias)
         if let Some(parent_id) = &bead.parent_id {
             parent_to_children
                 .entry(parent_id.clone())
@@ -405,30 +427,23 @@ pub async fn read_beads(
         }
     }
 
-    // Deduplicate parent_to_children entries (in case both old dependencies and parent field set)
     for children in parent_to_children.values_mut() {
         children.sort();
         children.dedup();
     }
 
     // Second pass: Infer parent-child from ID patterns (e.g., "64n.1" -> parent "64n")
-    // This matches how the bd CLI infers relationships when parent_id is not set
-    // Collect existing bead IDs first to avoid borrow issues
     let bead_ids: std::collections::HashSet<String> =
         beads.iter().map(|b| b.id.clone()).collect();
 
-    // Collect inferred relationships: (child_id, parent_id)
     let inferred: Vec<(String, String)> = beads
         .iter()
         .filter_map(|bead| {
-            // Only infer if parent_id is not already set
             if bead.parent_id.is_some() {
                 return None;
             }
-            // Check if ID contains a dot (indicating potential child)
             let dot_pos = bead.id.rfind('.')?;
             let potential_parent = &bead.id[..dot_pos];
-            // Only infer if the parent exists
             if bead_ids.contains(potential_parent) {
                 Some((bead.id.clone(), potential_parent.to_string()))
             } else {
@@ -437,13 +452,10 @@ pub async fn read_beads(
         })
         .collect();
 
-    // Apply inferred relationships
     for (child_id, inferred_parent_id) in &inferred {
-        // Set parent_id on the child bead
         if let Some(bead) = beads.iter_mut().find(|b| &b.id == child_id) {
             bead.parent_id = Some(inferred_parent_id.clone());
         }
-        // Record in parent_to_children map
         parent_to_children
             .entry(inferred_parent_id.clone())
             .or_default()
@@ -457,7 +469,7 @@ pub async fn read_beads(
         }
     }
 
-    (StatusCode::OK, Json(serde_json::json!({ "beads": beads })))
+    beads
 }
 
 /// Computes the appropriate status for an epic based on its children's statuses.

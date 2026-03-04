@@ -130,11 +130,29 @@ export function AddProjectDialog({
     (db) => !existingNamesLower.includes(db.project_name.toLowerCase())
   );
 
-  const handleDoltSelect = (db: DoltDatabase) => {
-    setProjectName(db.project_name);
-    setProjectPath("");
-    setShowNameInput(false);
-    setBrowsing(true);
+  const handleDoltQuickAdd = async (db: DoltDatabase) => {
+    setIsSubmitting(true);
+    try {
+      await onAddProject({
+        name: db.project_name,
+        path: `dolt://${db.name}`,
+      });
+      toast({
+        title: "Project added",
+        description: `"${db.project_name}" added from Dolt.`,
+      });
+      resetState();
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Error adding Dolt project:", err);
+      toast({
+        title: "Error",
+        description: "Failed to add project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBrowseSelect = (path: string, hasBeads: boolean) => {
@@ -207,7 +225,8 @@ export function AddProjectDialog({
                     <button
                       key={db.name}
                       type="button"
-                      onClick={() => handleDoltSelect(db)}
+                      onClick={() => handleDoltQuickAdd(db)}
+                      disabled={isSubmitting}
                       className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:bg-zinc-700/50"
                     >
                       {db.project_name}
@@ -215,7 +234,7 @@ export function AddProjectDialog({
                   ))}
                 </div>
                 <p className="text-xs text-zinc-500">
-                  Click to add — you&apos;ll need to provide the project path.
+                  Click to add instantly (read-only via Dolt SQL).
                 </p>
               </div>
             )}
