@@ -9,16 +9,16 @@
 ## See It in Action
 
 **Dashboard** — All your projects in one place with status at a glance:
-![Dashboard with multi-project view, status donuts, and tags](Screenshots/dashboard.png)
+![Dashboard with multi-project view, status donuts, and tags](screenshots/dashboard.png)
 
 **Kanban Board** — Organize tasks across Open → In Progress → In Review → Closed:
-![Kanban board showing epic groups and task cards with git branch info](Screenshots/kanban-board.png)
+![Kanban board showing epic groups and task cards with git branch info](screenshots/kanban-board.png)
 
 **Bead Details** — Dive into epics with full context and subtasks:
-![Bead detail panel showing epic with progress bar and subtasks](Screenshots/bead-detail.png)
+![Bead detail panel showing epic with progress bar and subtasks](screenshots/bead-detail.png)
 
 **Agents Panel** — View and configure agent definitions with model and tool controls:
-![Agents panel showing agent cards with model selector and tools](Screenshots/agents.png)
+![Agents panel showing agent cards with model selector and tools](screenshots/agents.png)
 
 ## Key Features
 
