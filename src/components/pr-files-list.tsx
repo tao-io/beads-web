@@ -20,18 +20,18 @@ function getStatusDisplay(status: PRFileEntry["status"]): {
   switch (status) {
     case "modified":
     case "changed":
-      return { letter: "M", className: "text-zinc-400 bg-zinc-400/10" };
+      return { letter: "M", className: "text-t-tertiary bg-t-tertiary/10" };
     case "added":
     case "copied":
-      return { letter: "A", className: "text-green-400 bg-green-400/10" };
+      return { letter: "A", className: "text-success bg-success/10" };
     case "removed":
-      return { letter: "D", className: "text-red-400 bg-red-400/10" };
+      return { letter: "D", className: "text-danger bg-danger/10" };
     case "renamed":
-      return { letter: "R", className: "text-amber-400 bg-amber-400/10" };
+      return { letter: "R", className: "text-warning bg-warning/10" };
     case "unchanged":
-      return { letter: "U", className: "text-zinc-500 bg-zinc-500/10" };
+      return { letter: "U", className: "text-t-muted bg-t-muted/10" };
     default:
-      return { letter: "?", className: "text-zinc-500 bg-zinc-500/10" };
+      return { letter: "?", className: "text-t-muted bg-t-muted/10" };
   }
 }
 
@@ -68,16 +68,16 @@ export function PRFilesList({
     <div className="space-y-2" role="region" aria-label="Pull request changed files">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-t-muted">
           Files Changed ({totalFiles})
         </span>
-        <span className="text-xs tabular-nums text-zinc-500">
+        <span className="text-xs tabular-nums text-t-muted">
           {totalAdditions > 0 && (
-            <span className="text-green-400">+{totalAdditions}</span>
+            <span className="text-success">+{totalAdditions}</span>
           )}
           {totalAdditions > 0 && totalDeletions > 0 && " "}
           {totalDeletions > 0 && (
-            <span className="text-red-400">-{totalDeletions}</span>
+            <span className="text-danger">-{totalDeletions}</span>
           )}
         </span>
       </div>
@@ -94,7 +94,7 @@ export function PRFilesList({
               return (
                 <div
                   key={file.filename}
-                  className="flex items-center gap-2 px-1.5 py-1 rounded text-xs hover:bg-zinc-800/50"
+                  className="flex items-center gap-2 px-1.5 py-1 rounded text-xs hover:bg-surface-overlay/50"
                 >
                   {/* Status letter badge */}
                   <span
@@ -111,7 +111,7 @@ export function PRFilesList({
                   {showTooltip ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="flex-1 min-w-0 truncate text-zinc-300 cursor-default">
+                        <span className="flex-1 min-w-0 truncate text-t-secondary cursor-default">
                           {name}
                         </span>
                       </TooltipTrigger>
@@ -122,7 +122,7 @@ export function PRFilesList({
                       </TooltipContent>
                     </Tooltip>
                   ) : (
-                    <span className="flex-1 min-w-0 truncate text-zinc-300">
+                    <span className="flex-1 min-w-0 truncate text-t-secondary">
                       {name}
                     </span>
                   )}
@@ -130,11 +130,11 @@ export function PRFilesList({
                   {/* Addition/deletion counts */}
                   <span className="flex-shrink-0 tabular-nums text-[11px] text-right">
                     {file.additions > 0 && (
-                      <span className="text-green-400">+{file.additions}</span>
+                      <span className="text-success">+{file.additions}</span>
                     )}
                     {file.additions > 0 && file.deletions > 0 && " "}
                     {file.deletions > 0 && (
-                      <span className="text-red-400">-{file.deletions}</span>
+                      <span className="text-danger">-{file.deletions}</span>
                     )}
                   </span>
                 </div>

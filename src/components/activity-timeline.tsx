@@ -132,7 +132,7 @@ export function ActivityTimeline({ bead, comments, childBeads = [] }: ActivityTi
       </h4>
       <div className="relative">
         {/* Vertical line */}
-        <div className="absolute left-[5px] top-2 bottom-2 w-px bg-zinc-700" />
+        <div className="absolute left-[5px] top-2 bottom-2 w-px bg-b-strong" />
 
         {/* Events */}
         <div className="space-y-3">
@@ -145,21 +145,21 @@ export function ActivityTimeline({ bead, comments, childBeads = [] }: ActivityTi
               <div
                 className={cn(
                   "absolute left-0 top-1.5 h-[11px] w-[11px] rounded-full border-2 bg-background",
-                  event.type === "created" && "border-green-500",
-                  event.type === "status_change" && "border-blue-500",
-                  event.type === "comment" && "border-zinc-400",
-                  event.type === "branch" && "border-purple-500",
-                  event.type === "child_created" && "border-cyan-500",
-                  event.type === "child_status_change" && "border-cyan-400"
+                  event.type === "created" && "border-success",
+                  event.type === "status_change" && "border-info",
+                  event.type === "comment" && "border-t-tertiary",
+                  event.type === "branch" && "border-epic",
+                  event.type === "child_created" && "border-status-review",
+                  event.type === "child_status_change" && "border-status-review"
                 )}
               />
 
               {/* Content */}
               <div className="flex flex-1 items-center justify-between min-w-0">
-                <span className="text-xs text-zinc-400 truncate">
+                <span className="text-xs text-t-tertiary truncate">
                   {event.description}
                 </span>
-                <span className="text-[10px] text-zinc-600 whitespace-nowrap ml-2">
+                <span className="text-[10px] text-t-faint whitespace-nowrap ml-2">
                   {formatTimestamp(event.timestamp)}
                 </span>
               </div>

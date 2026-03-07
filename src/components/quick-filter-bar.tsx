@@ -140,11 +140,11 @@ export function QuickFilterBar({
     <div
       role="toolbar"
       aria-label="Quick filters"
-      className="flex items-center gap-3 rounded-xl bg-zinc-900/80 backdrop-blur border border-zinc-800 px-3 py-2"
+      className="flex items-center gap-3 rounded-xl bg-surface-raised/80 backdrop-blur border border-b-default px-3 py-2"
     >
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" aria-hidden="true" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-t-muted" aria-hidden="true" />
         <Input
           ref={searchInputRef}
           type="text"
@@ -152,13 +152,13 @@ export function QuickFilterBar({
           placeholder="Search… (/)"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-8 pr-8 w-[180px] h-8 bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+          className="pl-8 pr-8 w-[180px] h-8 bg-surface-overlay/50 border-b-strong text-t-primary placeholder:text-t-muted"
         />
         {search && (
           <button
             type="button"
             onClick={() => onSearchChange('')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center text-zinc-500 hover:text-zinc-300"
+            className="absolute right-0 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center text-t-muted hover:text-t-secondary"
             aria-label="Clear search"
           >
             <X className="h-3.5 w-3.5" />
@@ -172,12 +172,12 @@ export function QuickFilterBar({
         onValueChange={(value) => onTypeFilterChange(value as TypeFilter)}
         className="h-8"
       >
-        <TabsList className="h-8 bg-zinc-800/50 p-0.5">
+        <TabsList className="h-8 bg-surface-overlay/50 p-0.5">
           {TYPE_OPTIONS.map((option) => (
             <TabsTrigger
               key={option.value}
               value={option.value}
-              className="h-7 px-3 text-sm font-medium data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 data-[state=inactive]:text-zinc-400 data-[state=inactive]:hover:text-zinc-200"
+              className="h-7 px-3 text-sm font-medium data-[state=active]:bg-surface-overlay data-[state=active]:text-t-primary data-[state=inactive]:text-t-tertiary data-[state=inactive]:hover:text-t-secondary"
             >
               {option.label}
             </TabsTrigger>
@@ -191,10 +191,10 @@ export function QuickFilterBar({
         onClick={() => onTodayOnlyChange(!todayOnly)}
         aria-pressed={todayOnly}
         className={cn(
-          'h-8 px-3 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900',
+          'h-8 px-3 text-sm font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised',
           todayOnly
-            ? 'bg-purple-500/20 text-purple-400'
-            : 'bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
+            ? 'bg-epic/20 text-epic'
+            : 'bg-surface-overlay/50 text-t-tertiary hover:text-t-secondary'
         )}
       >
         Today
@@ -207,10 +207,10 @@ export function QuickFilterBar({
           onClick={onMemoryToggle}
           aria-pressed={isMemoryOpen}
           className={cn(
-            'h-8 px-3 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900',
+            'h-8 px-3 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised',
             isMemoryOpen
-              ? 'bg-purple-500/20 text-purple-400'
-              : 'bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
+              ? 'bg-epic/20 text-epic'
+              : 'bg-surface-overlay/50 text-t-tertiary hover:text-t-secondary'
           )}
         >
           <BrainCircuit className="size-4" aria-hidden="true" />
@@ -225,10 +225,10 @@ export function QuickFilterBar({
           onClick={onAgentsToggle}
           aria-pressed={isAgentsOpen}
           className={cn(
-            'h-8 px-3 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900',
+            'h-8 px-3 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised',
             isAgentsOpen
-              ? 'bg-orange-500/20 text-orange-400'
-              : 'bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
+              ? 'bg-blocked-accent/20 text-blocked-accent'
+              : 'bg-surface-overlay/50 text-t-tertiary hover:text-t-secondary'
           )}
         >
           <Bot className="size-4" aria-hidden="true" />
@@ -243,7 +243,7 @@ export function QuickFilterBar({
             <TooltipTrigger asChild>
               <div
                 role="status"
-                className="flex items-center gap-1.5 h-8 px-2.5 text-sm font-medium rounded-md bg-orange-500/15 text-orange-400 border border-orange-600/30"
+                className="flex items-center gap-1.5 h-8 px-2.5 text-sm font-medium rounded-md bg-blocked-accent/15 text-blocked-accent border border-blocked-accent/30"
               >
                 <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
                 <span className="tabular-nums">{unknownStatusCount}</span>
@@ -275,21 +275,21 @@ export function QuickFilterBar({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2 text-zinc-400 hover:text-zinc-100"
+            className="h-8 px-2 text-t-tertiary hover:text-t-primary"
             aria-label="Sort options"
           >
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-          <DropdownMenuLabel className="text-zinc-400">Sort by</DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-zinc-800" />
+        <DropdownMenuContent align="end" className="bg-surface-raised border-b-default">
+          <DropdownMenuLabel className="text-t-tertiary">Sort by</DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-surface-overlay" />
           {SORT_OPTIONS.map((option) => (
             <DropdownMenuCheckboxItem
               key={option.value}
               checked={currentSortValue === option.value}
               onCheckedChange={() => handleSortOptionSelect(option.value)}
-              className="text-zinc-200 focus:bg-zinc-800 focus:text-zinc-100"
+              className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary"
             >
               {option.label}
             </DropdownMenuCheckboxItem>
@@ -305,7 +305,7 @@ export function QuickFilterBar({
             size="sm"
             className={cn(
               'h-8 px-2',
-              hasActiveFilters ? 'text-purple-400' : 'text-zinc-400 hover:text-zinc-100'
+              hasActiveFilters ? 'text-epic' : 'text-t-tertiary hover:text-t-primary'
             )}
             aria-label="Filter options"
           >
@@ -313,15 +313,15 @@ export function QuickFilterBar({
             {hasActiveFilters && <span className="ml-1 text-xs" aria-hidden="true">•</span>}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800">
-          <DropdownMenuLabel className="text-zinc-400">Status</DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-zinc-800" />
+        <DropdownMenuContent align="end" className="w-56 bg-surface-raised border-b-default">
+          <DropdownMenuLabel className="text-t-tertiary">Status</DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-surface-overlay" />
           {STATUS_OPTIONS.map((option) => (
             <DropdownMenuCheckboxItem
               key={option.value}
               checked={statuses.includes(option.value)}
               onCheckedChange={() => onStatusToggle(option.value)}
-              className="text-zinc-200 focus:bg-zinc-800 focus:text-zinc-100"
+              className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary"
             >
               {option.label}
             </DropdownMenuCheckboxItem>
@@ -329,15 +329,15 @@ export function QuickFilterBar({
 
           {availableOwners.length > 0 && (
             <>
-              <DropdownMenuSeparator className="bg-zinc-800" />
-              <DropdownMenuLabel className="text-zinc-400">Owner</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-zinc-800" />
+              <DropdownMenuSeparator className="bg-surface-overlay" />
+              <DropdownMenuLabel className="text-t-tertiary">Owner</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-surface-overlay" />
               {availableOwners.map((owner) => (
                 <DropdownMenuCheckboxItem
                   key={owner}
                   checked={owners.includes(owner)}
                   onCheckedChange={() => onOwnerToggle(owner)}
-                  className="text-zinc-200 focus:bg-zinc-800 focus:text-zinc-100"
+                  className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary"
                 >
                   {owner}
                 </DropdownMenuCheckboxItem>
@@ -347,10 +347,10 @@ export function QuickFilterBar({
 
           {hasActiveFilters && (
             <>
-              <DropdownMenuSeparator className="bg-zinc-800" />
+              <DropdownMenuSeparator className="bg-surface-overlay" />
               <DropdownMenuItem
                 onClick={onClearFilters}
-                className="text-red-400 focus:bg-zinc-800 focus:text-red-400"
+                className="text-danger focus:bg-surface-overlay focus:text-danger"
               >
                 Clear filters
               </DropdownMenuItem>

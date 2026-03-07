@@ -76,7 +76,7 @@ export function DependencyBadge({ deps, blockers, onNavigate }: DependencyBadgeP
           <Badge
             className={cn(
               "text-[10px] px-1.5 py-0 cursor-help",
-              "bg-orange-500 text-white hover:bg-orange-500/80 border-transparent"
+              "bg-blocked-accent text-white hover:bg-blocked-accent/80 border-transparent"
             )}
           >
             <AlertCircle className="h-3 w-3 mr-0.5" aria-hidden="true" />

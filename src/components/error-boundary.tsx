@@ -41,13 +41,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
-          <div className="text-sm text-red-400">
+          <div className="text-sm text-danger">
             {this.props.label
               ? `${this.props.label} encountered an error`
               : "Something went wrong"}
           </div>
           {this.state.error && (
-            <pre className="max-w-md text-xs text-zinc-500 truncate">
+            <pre className="max-w-md text-xs text-t-muted truncate">
               {this.state.error.message}
             </pre>
           )}

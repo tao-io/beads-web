@@ -36,19 +36,19 @@ function CommentCard({ comment }: { comment: Comment }) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 space-y-1.5"
+        "rounded-lg border border-b-default bg-surface-raised/50 p-3 space-y-1.5"
       )}
     >
       {/* Author and timestamp */}
       <div className="flex items-center gap-2 text-sm">
-        <span className="font-semibold text-zinc-200">{comment.author}</span>
-        <span className="text-zinc-500">
+        <span className="font-semibold text-t-secondary">{comment.author}</span>
+        <span className="text-t-muted">
           {formatRelativeTime(comment.created_at)}
         </span>
       </div>
 
       {/* Comment text */}
-      <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+      <p className="text-sm text-t-secondary leading-relaxed whitespace-pre-wrap">
         {comment.text}
       </p>
     </div>
@@ -106,7 +106,7 @@ export function CommentList({
 
       {/* Comments or empty state */}
       {comments.length === 0 ? (
-        <p className="text-sm text-zinc-500 py-4 text-center">
+        <p className="text-sm text-t-muted py-4 text-center">
           No comments yet
         </p>
       ) : (

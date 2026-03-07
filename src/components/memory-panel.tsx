@@ -122,7 +122,7 @@ function MemoryEntryCard({
   onNavigate?: (beadId: string) => void;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 space-y-2 overflow-hidden">
+    <div className="rounded-lg border border-b-default bg-surface-raised/50 p-3 space-y-2 overflow-hidden">
       {/* Top row: type badge, timestamp */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -138,7 +138,7 @@ function MemoryEntryCard({
         </div>
         <time
           dateTime={new Date(entry.ts * 1000).toISOString()}
-          className="text-xs text-zinc-600 shrink-0 tabular-nums"
+          className="text-xs text-t-faint shrink-0 tabular-nums"
           suppressHydrationWarning
         >
           {formatRelativeTime(entry.ts)}
@@ -146,7 +146,7 @@ function MemoryEntryCard({
       </div>
 
       {/* Content preview */}
-      <p className="text-sm text-zinc-300 line-clamp-3 text-pretty">
+      <p className="text-sm text-t-secondary line-clamp-3 text-pretty">
         {entry.content}
       </p>
 
@@ -159,13 +159,13 @@ function MemoryEntryCard({
               variant="secondary"
               appearance="light"
               size="xs"
-              className="text-zinc-500"
+              className="text-t-muted"
             >
               {tag}
             </Badge>
           ))}
           {entry.tags.length > 3 && (
-            <span className="text-xs text-zinc-600 shrink-0">
+            <span className="text-xs text-t-faint shrink-0">
               +{entry.tags.length - 3}
             </span>
           )}
@@ -177,7 +177,7 @@ function MemoryEntryCard({
               type="button"
               onClick={() => onNavigate?.(entry.bead)}
               className={cn(
-                "text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring truncate max-w-[120px]",
+                "text-xs font-mono text-t-muted hover:text-t-secondary transition-colors rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring truncate max-w-[120px]",
                 !onNavigate && "pointer-events-none"
               )}
               title={entry.bead}
@@ -191,7 +191,7 @@ function MemoryEntryCard({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="size-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="size-6 flex items-center justify-center rounded text-t-muted hover:text-t-secondary hover:bg-surface-overlay transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 aria-label="Entry actions"
               >
                 <MoreVertical className="size-3.5" />
@@ -199,18 +199,18 @@ function MemoryEntryCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="bg-zinc-900 border-zinc-800"
+              className="bg-surface-raised border-b-default"
             >
               <DropdownMenuItem
                 onClick={() => onEdit(entry)}
-                className="text-zinc-200 focus:bg-zinc-800 focus:text-zinc-100 gap-2"
+                className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary gap-2"
               >
                 <Pencil className="size-3.5" aria-hidden="true" />
                 Edit content
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onEdit(entry)}
-                className="text-zinc-200 focus:bg-zinc-800 focus:text-zinc-100 gap-2"
+                className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary gap-2"
               >
                 <Tag className="size-3.5" aria-hidden="true" />
                 Edit tags
@@ -218,23 +218,23 @@ function MemoryEntryCard({
               {entry.bead && onNavigate && (
                 <DropdownMenuItem
                   onClick={() => onNavigate(entry.bead)}
-                  className="text-zinc-200 focus:bg-zinc-800 focus:text-zinc-100 gap-2"
+                  className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary gap-2"
                 >
                   <ExternalLink className="size-3.5" aria-hidden="true" />
                   Navigate to bead
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator className="bg-zinc-800" />
+              <DropdownMenuSeparator className="bg-surface-overlay" />
               <DropdownMenuItem
                 onClick={() => onArchive(entry.key)}
-                className="text-zinc-200 focus:bg-zinc-800 focus:text-zinc-100 gap-2"
+                className="text-t-secondary focus:bg-surface-overlay focus:text-t-primary gap-2"
               >
                 <Archive className="size-3.5" aria-hidden="true" />
                 Archive
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(entry.key)}
-                className="text-red-400 focus:bg-zinc-800 focus:text-red-400 gap-2"
+                className="text-danger focus:bg-surface-overlay focus:text-danger gap-2"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
                 Delete
@@ -370,14 +370,14 @@ export function MemoryPanel({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-lg md:max-w-xl bg-[#0a0a0a] border-zinc-800 flex flex-col"
+          className="w-full sm:max-w-lg md:max-w-xl bg-surface-base border-b-default flex flex-col"
         >
           <SheetHeader className="space-y-1">
-            <SheetTitle className="flex items-center gap-2 text-zinc-100">
+            <SheetTitle className="flex items-center gap-2 text-t-primary">
               <BrainCircuit className="size-5" aria-hidden="true" />
               Memory
             </SheetTitle>
-            <SheetDescription className="text-zinc-500">
+            <SheetDescription className="text-t-muted">
               {stats
                 ? `${stats.total} ${stats.total === 1 ? "entry" : "entries"}`
                 : "Loading..."}
@@ -387,7 +387,7 @@ export function MemoryPanel({
           {/* Search input */}
           <div className="relative mt-4">
             <Search
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-500"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-t-muted"
               aria-hidden="true"
             />
             <Input
@@ -396,13 +396,13 @@ export function MemoryPanel({
               placeholder="Search memories..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-8 h-8 bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+              className="pl-8 pr-8 h-8 bg-surface-overlay/50 border-b-strong text-t-primary placeholder:text-t-muted"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-0 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center text-zinc-500 hover:text-zinc-300"
+                className="absolute right-0 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center text-t-muted hover:text-t-secondary"
                 aria-label="Clear search"
               >
                 <X className="size-3.5" />
@@ -416,22 +416,22 @@ export function MemoryPanel({
             onValueChange={handleTabChange}
             className="mt-3"
           >
-            <TabsList className="h-8 bg-zinc-800/50 p-0.5 w-full">
+            <TabsList className="h-8 bg-surface-overlay/50 p-0.5 w-full">
               <TabsTrigger
                 value="all"
-                className="h-7 flex-1 text-sm font-medium data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 data-[state=inactive]:text-zinc-400"
+                className="h-7 flex-1 text-sm font-medium data-[state=active]:bg-surface-overlay data-[state=active]:text-t-primary data-[state=inactive]:text-t-tertiary"
               >
                 All
               </TabsTrigger>
               <TabsTrigger
                 value="learned"
-                className="h-7 flex-1 text-sm font-medium data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 data-[state=inactive]:text-zinc-400"
+                className="h-7 flex-1 text-sm font-medium data-[state=active]:bg-surface-overlay data-[state=active]:text-t-primary data-[state=inactive]:text-t-tertiary"
               >
                 Learned
               </TabsTrigger>
               <TabsTrigger
                 value="investigation"
-                className="h-7 flex-1 text-sm font-medium data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 data-[state=inactive]:text-zinc-400"
+                className="h-7 flex-1 text-sm font-medium data-[state=active]:bg-surface-overlay data-[state=active]:text-t-primary data-[state=inactive]:text-t-tertiary"
               >
                 Investigation
               </TabsTrigger>
@@ -443,28 +443,28 @@ export function MemoryPanel({
             <div className="space-y-2 pb-4">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="size-5 text-zinc-500 animate-spin" aria-hidden="true" />
+                  <Loader2 className="size-5 text-t-muted animate-spin" aria-hidden="true" />
                   <span className="sr-only">Loading memory entries</span>
                 </div>
               ) : error ? (
                 <div
                   role="alert"
-                  className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center"
+                  className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center"
                 >
-                  <p className="text-sm text-red-400">
+                  <p className="text-sm text-danger">
                     Failed to load memory entries
                   </p>
-                  <p className="text-xs text-red-400/60 mt-1">
+                  <p className="text-xs text-danger/60 mt-1">
                     {error.message}
                   </p>
                 </div>
               ) : filteredEntries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <BrainCircuit
-                    className="size-8 text-zinc-700 mb-3"
+                    className="size-8 text-t-faint mb-3"
                     aria-hidden="true"
                   />
-                  <p className="text-sm text-zinc-500">
+                  <p className="text-sm text-t-muted">
                     {search || typeFilter
                       ? "No entries match your search"
                       : "No memory entries yet"}
@@ -477,7 +477,7 @@ export function MemoryPanel({
                         setActiveTab("all");
                         setTypeFilter(null);
                       }}
-                      className="mt-2 text-xs text-zinc-500 hover:text-zinc-300 underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      className="mt-2 text-xs text-t-muted hover:text-t-secondary underline underline-offset-2 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       Clear filters
                     </button>
@@ -500,8 +500,8 @@ export function MemoryPanel({
 
           {/* Footer stats */}
           {stats && stats.total > 0 && (
-            <SheetFooter className="border-t border-zinc-800 pt-3 -mx-6 px-6">
-              <p className="text-xs text-zinc-600 w-full text-center">
+            <SheetFooter className="border-t border-b-default pt-3 -mx-6 px-6">
+              <p className="text-xs text-t-faint w-full text-center">
                 <span className="tabular-nums">{stats.learned}</span> learned
                 <span className="mx-1.5" aria-hidden="true">
                   ·
@@ -528,12 +528,12 @@ export function MemoryPanel({
         open={!!editingEntry}
         onOpenChange={(isOpen) => !isOpen && setEditingEntry(null)}
       >
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent className="bg-surface-raised border-b-default">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-zinc-100">
+            <AlertDialogTitle className="text-t-primary">
               Edit Memory Entry
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-500">
+            <AlertDialogDescription className="text-t-muted">
               Update the content or tags for this entry.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -541,7 +541,7 @@ export function MemoryPanel({
             <div className="space-y-2">
               <label
                 htmlFor="edit-content"
-                className="text-sm font-medium text-zinc-300"
+                className="text-sm font-medium text-t-secondary"
               >
                 Content
               </label>
@@ -549,13 +549,13 @@ export function MemoryPanel({
                 id="edit-content"
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="w-full h-32 rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                className="w-full h-32 rounded-md border border-b-strong bg-surface-overlay/50 px-3 py-2 text-sm text-t-primary placeholder:text-t-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
               />
             </div>
             <div className="space-y-2">
               <label
                 htmlFor="edit-tags"
-                className="text-sm font-medium text-zinc-300"
+                className="text-sm font-medium text-t-secondary"
               >
                 Tags (comma-separated)
               </label>
@@ -563,7 +563,7 @@ export function MemoryPanel({
                 id="edit-tags"
                 value={editTags}
                 onChange={(e) => setEditTags(e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+                className="bg-surface-overlay/50 border-b-strong text-t-primary placeholder:text-t-muted"
                 placeholder="tag1, tag2, tag3..."
               />
             </div>
@@ -585,12 +585,12 @@ export function MemoryPanel({
         open={!!deletingKey}
         onOpenChange={(isOpen) => !isOpen && setDeletingKey(null)}
       >
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent className="bg-surface-raised border-b-default">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-zinc-100">
+            <AlertDialogTitle className="text-t-primary">
               Delete Memory Entry
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
+            <AlertDialogDescription className="text-t-tertiary">
               This will permanently delete this memory entry. This action cannot
               be undone. Consider archiving instead.
             </AlertDialogDescription>

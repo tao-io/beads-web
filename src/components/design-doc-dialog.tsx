@@ -37,8 +37,8 @@ export function DesignDocDialog({
 }: DesignDocDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[60vw] max-w-[60vw] max-h-[80vh] p-0 bg-zinc-900 border-zinc-800">
-        <DialogHeader className="px-6 pt-6 pb-3 border-b border-zinc-800">
+      <DialogContent className="w-[60vw] max-w-[60vw] max-h-[80vh] p-0 bg-surface-raised border-b-default">
+        <DialogHeader className="px-6 pt-6 pb-3 border-b border-b-default">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <DialogTitle className="text-base font-semibold">

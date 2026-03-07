@@ -93,7 +93,7 @@ export function EditableField({
   if (disabled) {
     return (
       <span className={className}>
-        {value || <span className="text-zinc-600 italic">{placeholder}</span>}
+        {value || <span className="text-t-faint italic">{placeholder}</span>}
       </span>
     );
   }
@@ -101,14 +101,14 @@ export function EditableField({
   if (isSaving) {
     return (
       <span className={cn("inline-flex items-center gap-1.5", className)}>
-        <Loader2 className="size-3 animate-spin text-zinc-500" />
-        <span className="text-zinc-500">Saving…</span>
+        <Loader2 className="size-3 animate-spin text-t-muted" />
+        <span className="text-t-muted">Saving…</span>
       </span>
     );
   }
 
   if (isEditing) {
-    const sharedClasses = "w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-zinc-100 focus:outline-none focus:border-zinc-500";
+    const sharedClasses = "w-full bg-surface-raised border border-b-strong rounded px-2 py-1 text-t-primary focus:outline-none focus:border-t-muted";
 
     if (multiline) {
       return (
@@ -141,12 +141,12 @@ export function EditableField({
     <span
       onClick={() => setIsEditing(true)}
       className={cn(
-        "cursor-text hover:bg-zinc-800/50 rounded px-1 -mx-1 transition-colors",
+        "cursor-text hover:bg-surface-overlay/50 rounded px-1 -mx-1 transition-colors",
         className
       )}
       title="Click to edit"
     >
-      {value || <span className="text-zinc-600 italic">{placeholder}</span>}
+      {value || <span className="text-t-faint italic">{placeholder}</span>}
     </span>
   );
 }

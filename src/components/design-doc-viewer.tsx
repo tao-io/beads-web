@@ -56,8 +56,8 @@ async function fetchDesignDoc(path: string, projectPath: string): Promise<string
 const proseStyles = cn(
   "prose prose-sm dark:prose-invert max-w-none",
   "prose-headings:scroll-mt-20",
-  "prose-pre:bg-zinc-900 prose-pre:text-zinc-100",
-  "prose-code:text-sm prose-code:bg-zinc-100 dark:prose-code:bg-zinc-800",
+  "prose-pre:bg-surface-raised prose-pre:text-t-primary",
+  "prose-code:text-sm prose-code:bg-surface-overlay",
   "prose-code:px-1 prose-code:py-0.5 prose-code:rounded"
 );
 
@@ -163,10 +163,10 @@ export function DesignDocViewer({ designDocPath, epicId, projectPath, onFullScre
 
       <MorphingDialogContainer>
         <MorphingDialogContent
-          className="relative bg-zinc-900 border-zinc-800 rounded-lg shadow-lg w-[60vw] max-h-[80vh] overflow-hidden"
+          className="relative bg-surface-raised border-b-default rounded-lg shadow-lg w-[60vw] max-h-[80vh] overflow-hidden"
         >
           {/* Fixed header outside scroll area */}
-          <div className="flex items-center gap-2 px-6 pt-6 pb-3 border-b border-zinc-800">
+          <div className="flex items-center gap-2 px-6 pt-6 pb-3 border-b border-b-default">
             <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
             <MorphingDialogTitle>
               <h2 className="text-sm font-semibold">Design Document</h2>

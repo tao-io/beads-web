@@ -34,7 +34,7 @@ export function CopyableText({ children, copyText, className }: CopyableTextProp
 
   if (copied) {
     return (
-      <span className={cn("inline-flex items-center gap-0.5 text-green-400", className)}>
+      <span className={cn("inline-flex items-center gap-0.5 text-success", className)}>
         <Check className="size-3" aria-hidden="true" />
         Copied
       </span>
@@ -44,7 +44,7 @@ export function CopyableText({ children, copyText, className }: CopyableTextProp
   return (
     <span
       onClick={handleCopy}
-      className={cn("cursor-copy hover:text-zinc-200 transition-colors", className)}
+      className={cn("cursor-copy hover:text-t-secondary transition-colors", className)}
       title={`Click to copy: ${copyText}`}
     >
       {children}

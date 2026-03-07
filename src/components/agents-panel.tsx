@@ -34,19 +34,19 @@ const MODEL_COLORS: Record<
   { bg: string; text: string; border: string }
 > = {
   opus: {
-    bg: "bg-orange-500/15",
-    text: "text-orange-400",
-    border: "border-orange-500/25",
+    bg: "bg-blocked-accent/15",
+    text: "text-blocked-accent",
+    border: "border-blocked-accent/25",
   },
   sonnet: {
-    bg: "bg-cyan-500/15",
-    text: "text-cyan-400",
-    border: "border-cyan-500/25",
+    bg: "bg-status-review/15",
+    text: "text-status-review",
+    border: "border-status-review/25",
   },
   haiku: {
-    bg: "bg-lime-500/15",
-    text: "text-lime-400",
-    border: "border-lime-500/25",
+    bg: "bg-success/15",
+    text: "text-success",
+    border: "border-success/25",
   },
 };
 
@@ -103,30 +103,30 @@ function AgentCard({
   const hasAllTools = agent.tools === "*";
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+    <div className="rounded-lg border border-b-default bg-surface-raised/50 overflow-hidden">
       {/* Collapsed header - always visible, clickable */}
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isExpanded}
-        className="w-full text-left p-3 flex items-start gap-2.5 hover:bg-zinc-800/30 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset"
+        className="w-full text-left p-3 flex items-start gap-2.5 hover:bg-surface-overlay/30 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset"
       >
         <div className="flex-1 min-w-0 space-y-1">
           {/* Name row */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-zinc-100 truncate">
+            <span className="text-sm font-medium text-t-primary truncate">
               {agent.name}
             </span>
             <ModelBadge model={agent.model} />
           </div>
 
           {/* Description */}
-          <p className="text-xs text-zinc-500 line-clamp-1 text-pretty">
+          <p className="text-xs text-t-muted line-clamp-1 text-pretty">
             {agent.description || "No description"}
           </p>
 
           {/* Tools summary */}
-          <div className="flex items-center gap-1 text-xs text-zinc-500">
+          <div className="flex items-center gap-1 text-xs text-t-muted">
             <Wrench className="size-3 shrink-0" aria-hidden="true" />
             <span className="truncate">{formatToolsSummary(agent.tools)}</span>
           </div>
@@ -135,7 +135,7 @@ function AgentCard({
         {/* Expand chevron */}
         <ChevronDown
           className={cn(
-            "size-4 text-zinc-500 shrink-0 mt-0.5 transition-transform",
+            "size-4 text-t-muted shrink-0 mt-0.5 transition-transform",
             isExpanded && "rotate-180"
           )}
           aria-hidden="true"
@@ -144,10 +144,10 @@ function AgentCard({
 
       {/* Expanded details */}
       {isExpanded && (
-        <div className="border-t border-zinc-800 p-3 space-y-3">
+        <div className="border-t border-b-default p-3 space-y-3">
           {/* Model selector */}
           <div className="space-y-1.5">
-            <span id={`model-label-${agent.filename}`} className="text-xs font-medium text-zinc-400">Model</span>
+            <span id={`model-label-${agent.filename}`} className="text-xs font-medium text-t-tertiary">Model</span>
             <div
               className="flex gap-1"
               role="radiogroup"
@@ -168,7 +168,7 @@ function AgentCard({
                       "flex-1 h-7 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                       isSelected
                         ? cn(colors.bg, colors.text, "border", colors.border)
-                        : "bg-zinc-800/50 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 border border-transparent"
+                        : "bg-surface-overlay/50 text-t-muted hover:text-t-secondary hover:bg-surface-overlay border border-transparent"
                     )}
                   >
                     {model}
@@ -182,7 +182,7 @@ function AgentCard({
           <div className="flex items-center justify-between">
             <label
               htmlFor={`all-tools-${agent.filename}`}
-              className="text-xs font-medium text-zinc-400"
+              className="text-xs font-medium text-t-tertiary"
             >
               All tools
             </label>
@@ -196,16 +196,16 @@ function AgentCard({
               className={cn(
                 "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 hasAllTools
-                  ? "bg-orange-500/30 border-orange-500/40"
-                  : "bg-zinc-800 border-zinc-700"
+                  ? "bg-blocked-accent/30 border-blocked-accent/40"
+                  : "bg-surface-overlay border-b-strong"
               )}
             >
               <span
                 className={cn(
                   "pointer-events-none block size-3.5 rounded-full transition-transform",
                   hasAllTools
-                    ? "translate-x-[18px] bg-orange-400"
-                    : "translate-x-[3px] bg-zinc-500"
+                    ? "translate-x-[18px] bg-blocked-accent"
+                    : "translate-x-[3px] bg-t-muted"
                 )}
               />
             </button>
@@ -214,14 +214,14 @@ function AgentCard({
           {/* Tools list (when not all tools) */}
           {!hasAllTools && Array.isArray(agent.tools) && agent.tools.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-zinc-400">
+              <p className="text-xs font-medium text-t-tertiary">
                 Tools ({agent.tools.length})
               </p>
               <div className="flex flex-wrap gap-1">
                 {agent.tools.map((tool) => (
                   <span
                     key={tool}
-                    className="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.625rem] leading-none font-mono bg-zinc-800 text-zinc-500 border border-zinc-700/50"
+                    className="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[0.625rem] leading-none font-mono bg-surface-overlay text-t-muted border border-b-strong/50"
                   >
                     {tool}
                   </span>
@@ -232,7 +232,7 @@ function AgentCard({
 
           {/* Updating indicator */}
           {isUpdating && (
-            <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-xs text-zinc-500">
+            <div role="status" aria-live="polite" className="flex items-center gap-1.5 text-xs text-t-muted">
               <Loader2
                 className="size-3 animate-spin"
                 aria-hidden="true"
@@ -309,14 +309,14 @@ export function AgentsPanel({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg md:max-w-xl bg-[#0a0a0a] border-zinc-800 flex flex-col"
+        className="w-full sm:max-w-lg md:max-w-xl bg-surface-base border-b-default flex flex-col"
       >
         <SheetHeader className="space-y-1">
-          <SheetTitle className="flex items-center gap-2 text-zinc-100">
+          <SheetTitle className="flex items-center gap-2 text-t-primary">
             <Bot className="size-5" aria-hidden="true" />
             Agents
           </SheetTitle>
-          <SheetDescription className="text-zinc-500">
+          <SheetDescription className="text-t-muted">
             {isLoading
               ? "Loading..."
               : `${agents.length} ${agents.length === 1 ? "agent" : "agents"}`}
@@ -329,7 +329,7 @@ export function AgentsPanel({
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2
-                  className="size-5 text-zinc-500 animate-spin"
+                  className="size-5 text-t-muted animate-spin"
                   aria-hidden="true"
                 />
                 <span className="sr-only">Loading agents</span>
@@ -337,23 +337,23 @@ export function AgentsPanel({
             ) : error ? (
               <div
                 role="alert"
-                className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center"
+                className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center"
               >
-                <p className="text-sm text-red-400">
+                <p className="text-sm text-danger">
                   Failed to load agents
                 </p>
-                <p className="text-xs text-red-400/60 mt-1">
+                <p className="text-xs text-danger/60 mt-1">
                   {error.message}
                 </p>
               </div>
             ) : agents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Bot
-                  className="size-8 text-zinc-700 mb-3"
+                  className="size-8 text-t-faint mb-3"
                   aria-hidden="true"
                 />
-                <p className="text-sm text-zinc-500">No agents configured</p>
-                <p className="text-xs text-zinc-600 mt-1">
+                <p className="text-sm text-t-muted">No agents configured</p>
+                <p className="text-xs text-t-faint mt-1">
                   Add agent files to .claude/agents/ to get started
                 </p>
               </div>

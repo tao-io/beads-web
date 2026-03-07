@@ -15,48 +15,48 @@ interface StatusDonutProps {
   className?: string;
 }
 
-// Status colors matching the kanban board
+// Status colors via CSS variables (semantic tokens from globals.css)
 const STATUS_COLORS = {
-  open: "#3b82f6",        // blue-500
-  in_progress: "#f59e0b", // amber-500
-  inreview: "#06b6d4",    // cyan-500
-  closed: "#22c55e",      // green-500
+  open: "hsl(var(--status-open))",
+  in_progress: "hsl(var(--status-progress))",
+  inreview: "hsl(var(--status-review))",
+  closed: "hsl(var(--status-closed))",
 };
 
 // Custom tooltip showing all statuses
 function StatusTooltip({ beadCounts, total }: { beadCounts: BeadCounts; total: number }) {
   return (
-    <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-lg">
-      <div className="mb-1.5 text-xs font-medium text-zinc-300">
+    <div className="rounded-lg border border-b-strong bg-surface-raised px-3 py-2 shadow-lg">
+      <div className="mb-1.5 text-xs font-medium text-t-secondary">
         {total} task{total !== 1 ? "s" : ""}
       </div>
       <div className="space-y-1">
         {beadCounts.open > 0 && (
           <div className="flex items-center gap-2 text-xs">
             <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: STATUS_COLORS.open }} />
-            <span className="text-zinc-400">Open</span>
-            <span className="ml-auto font-mono text-zinc-100">{beadCounts.open}</span>
+            <span className="text-t-tertiary">Open</span>
+            <span className="ml-auto font-mono text-t-primary">{beadCounts.open}</span>
           </div>
         )}
         {beadCounts.in_progress > 0 && (
           <div className="flex items-center gap-2 text-xs">
             <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: STATUS_COLORS.in_progress }} />
-            <span className="text-zinc-400">In Progress</span>
-            <span className="ml-auto font-mono text-zinc-100">{beadCounts.in_progress}</span>
+            <span className="text-t-tertiary">In Progress</span>
+            <span className="ml-auto font-mono text-t-primary">{beadCounts.in_progress}</span>
           </div>
         )}
         {beadCounts.inreview > 0 && (
           <div className="flex items-center gap-2 text-xs">
             <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: STATUS_COLORS.inreview }} />
-            <span className="text-zinc-400">In Review</span>
-            <span className="ml-auto font-mono text-zinc-100">{beadCounts.inreview}</span>
+            <span className="text-t-tertiary">In Review</span>
+            <span className="ml-auto font-mono text-t-primary">{beadCounts.inreview}</span>
           </div>
         )}
         {beadCounts.closed > 0 && (
           <div className="flex items-center gap-2 text-xs">
             <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: STATUS_COLORS.closed }} />
-            <span className="text-zinc-400">Closed</span>
-            <span className="ml-auto font-mono text-zinc-100">{beadCounts.closed}</span>
+            <span className="text-t-tertiary">Closed</span>
+            <span className="ml-auto font-mono text-t-primary">{beadCounts.closed}</span>
           </div>
         )}
       </div>
@@ -89,7 +89,7 @@ export function StatusDonut({ beadCounts, size = 40, className }: StatusDonutPro
         aria-label="No tasks"
       >
         <div
-          className="rounded-full border-2 border-dashed border-zinc-700 w-full h-full"
+          className="rounded-full border-2 border-dashed border-b-strong w-full h-full"
           title="No tasks"
         />
       </div>
