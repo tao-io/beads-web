@@ -103,32 +103,49 @@ Soft Light theme is shown in the main screenshot above.
 
 ### Prerequisites
 
-- Node.js 20+
-- Rust toolchain (cargo)
-- Beads CLI (`bd`)
+- [Beads CLI](https://github.com/steveyegge/beads) (`bd`) installed and available in PATH
 
-### Build & Run
+### Download
+
+Download the binary for your platform from [GitHub Releases](https://github.com/weselow/beads-web/releases/latest):
+
+| Platform | File |
+|----------|------|
+| Windows x64 | `beads-web-win-x64.exe` |
+| macOS Apple Silicon | `beads-web-darwin-arm64` |
+| macOS Intel | `beads-web-darwin-x64` |
+| Linux x64 | `beads-web-linux-x64` |
+
+### Run
+
+```bash
+# macOS/Linux — make executable, then run
+chmod +x beads-web-*
+./beads-web-darwin-arm64
+
+# Windows
+beads-web-win-x64.exe
+```
+
+Open http://localhost:3007. The frontend is embedded in the binary — no Node.js or Rust needed.
+
+## Development
+
+For contributing or local development:
 
 ```bash
 git clone https://github.com/weselow/beads-web.git
 cd beads-web
 npm install
-npm run build
-cd server && cargo build --release
-./server/target/release/beads-server
-```
 
-Open http://localhost:3007
-
-## Development
-
-```bash
 # Terminal 1: Frontend dev server
 npm run dev
 
 # Terminal 2: Rust backend
 cd server && cargo run
 ```
+
+Prerequisites: Node.js 20+, Rust toolchain.
 
 Note: `next dev` requires commenting out `output: 'export'` in `next.config.js`.
 

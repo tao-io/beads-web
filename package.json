@@ -1,5 +1,5 @@
 {
-  "name": "beads-kanban-ui",
+  "name": "beads-web",
   "version": "0.3.1",
   "scripts": {
     "dev": "next dev -p 3007",

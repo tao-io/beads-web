@@ -18,16 +18,16 @@ jobs:
         include:
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact: beads-server-darwin-arm64
+            artifact: beads-web-darwin-arm64
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact: beads-server-darwin-x64
+            artifact: beads-web-darwin-x64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact: beads-server-linux-x64
+            artifact: beads-web-linux-x64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact: beads-server-win32-x64.exe
+            artifact: beads-web-win-x64.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -95,29 +95,3 @@ jobs:
           tag_name: ${{ inputs.version || github.ref_name }}
           files: release/*
           generate_release_notes: true
-
-  publish-npm:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Update package version
-        run: |
-          VERSION="${{ inputs.version || github.ref_name }}"
-          VERSION="${VERSION#v}"  # Remove 'v' prefix
-          cd npm
-          npm version $VERSION --no-git-tag-version --allow-same-version
-
-      - name: Publish to npm
-        run: npm publish
-        working-directory: npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
