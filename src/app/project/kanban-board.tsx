@@ -230,8 +230,8 @@ export default function KanbanBoard() {
   // Redirect state while no project ID
   if (!projectId) {
     return (
-      <div className="dark flex min-h-dvh items-center justify-center bg-[#0a0a0a]">
-        <p className="text-zinc-500">Redirecting…</p>
+      <div className="flex min-h-dvh items-center justify-center bg-surface-base">
+        <p className="text-t-muted">Redirecting…</p>
       </div>
     );
   }
@@ -239,8 +239,8 @@ export default function KanbanBoard() {
   // Show loading state
   if (projectLoading) {
     return (
-      <div className="dark flex items-center justify-center min-h-dvh bg-[#0a0a0a]">
-        <div role="status" className="text-zinc-500">Loading project…</div>
+      <div className="flex items-center justify-center min-h-dvh bg-surface-base">
+        <div role="status" className="text-t-muted">Loading project…</div>
       </div>
     );
   }
@@ -248,8 +248,8 @@ export default function KanbanBoard() {
   // Show project error state
   if (projectError) {
     return (
-      <div className="dark flex flex-col items-center justify-center min-h-dvh bg-[#0a0a0a] gap-4">
-        <div role="alert" className="text-red-400">Error: {projectError.message}</div>
+      <div className="flex flex-col items-center justify-center min-h-dvh bg-surface-base gap-4">
+        <div role="alert" className="text-danger">Error: {projectError.message}</div>
         <Button variant="outline" asChild>
           <a href="/">Back to projects</a>
         </Button>
@@ -260,8 +260,8 @@ export default function KanbanBoard() {
   // Project not found
   if (!project) {
     return (
-      <div className="dark flex flex-col items-center justify-center min-h-dvh bg-[#0a0a0a] gap-4">
-        <div className="text-zinc-500">Project not found</div>
+      <div className="flex flex-col items-center justify-center min-h-dvh bg-surface-base gap-4">
+        <div className="text-t-muted">Project not found</div>
         <Button variant="outline" asChild>
           <a href="/">Back to projects</a>
         </Button>
@@ -270,7 +270,7 @@ export default function KanbanBoard() {
   }
 
   return (
-    <div className="dark min-h-dvh bg-[#0a0a0a] flex flex-col">
+    <div className="min-h-dvh bg-surface-base flex flex-col">
       {/* Breadcrumb line */}
       <div className="flex items-center gap-2 px-4 py-2">
         <Button variant="ghost" size="icon" asChild>
@@ -327,11 +327,11 @@ export default function KanbanBoard() {
       <main className="flex-1 overflow-hidden p-4">
         {beadsLoading ? (
           <div className="flex items-center justify-center h-full">
-            <div role="status" className="text-zinc-500">Loading beads…</div>
+            <div role="status" className="text-t-muted">Loading beads…</div>
           </div>
         ) : beadsError ? (
           <div className="flex items-center justify-center h-full">
-            <div role="alert" className="text-red-400">Error loading beads: {beadsError.message}</div>
+            <div role="alert" className="text-danger">Error loading beads: {beadsError.message}</div>
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-4 h-full">

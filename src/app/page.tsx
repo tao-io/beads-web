@@ -122,7 +122,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="dark flex min-h-dvh flex-col bg-surface-base">
+    <div className="flex min-h-dvh flex-col bg-surface-base">
       {/* Navigation Bar */}
       <nav className="sticky top-0 z-30 border-b border-b-default bg-surface-base/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1200px] items-center justify-center px-6 py-2">

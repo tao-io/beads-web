@@ -68,7 +68,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="dark min-h-dvh bg-surface-base">
+    <div className="min-h-dvh bg-surface-base">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-b-default bg-surface-base/80 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center gap-4">
@@ -101,8 +101,8 @@ export default function SettingsPage() {
       <main className="mx-auto max-w-2xl p-6">
         {/* Theme Section */}
         <section className="mb-8">
-          <h2 className="mb-4 text-lg font-medium text-zinc-100">Theme</h2>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+          <h2 className="mb-4 text-lg font-medium text-t-primary">Theme</h2>
+          <div className="rounded-lg border border-b-default bg-surface-raised/50 p-4">
             <ThemeSwitcher />
           </div>
         </section>
