@@ -4,19 +4,12 @@ import { useMemo, useState } from "react";
 
 
 
-import { Plus, ChevronDown, FolderPlus, FolderSearch, Github, Search, X } from "lucide-react";
+import { Plus, Github, Search, X } from "lucide-react";
 
 import { AddProjectDialog } from "@/components/add-project-dialog";
 import { ProjectCard } from "@/components/project-card";
-import { ScanDirectoryDialog } from "@/components/scan-directory-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button, ButtonArrow } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProjects } from "@/hooks/use-projects";
@@ -24,7 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function ProjectsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const { projects, isLoading, error, addProject, updateProjectTags } = useProjects();
@@ -91,35 +83,6 @@ export default function ProjectsPage() {
     await addProject(input);
   };
 
-  const handleAddMultipleProjects = async (projectsToAdd: { name: string; path: string }[]) => {
-    // Filter out projects that already exist
-    const existingPaths = new Set(projects.map(p => p.path));
-    const newProjects = projectsToAdd.filter(p => !existingPaths.has(p.path));
-    const duplicateCount = projectsToAdd.length - newProjects.length;
-
-    // If all are duplicates, show error
-    if (newProjects.length === 0) {
-      toast({
-        title: "All projects already exist",
-        description: `${duplicateCount === 1 ? "This project is" : "All " + duplicateCount + " projects are"} already in your dashboard.`,
-        variant: "destructive",
-      });
-      throw new Error("All projects already exist");
-    }
-
-    // Add new projects
-    for (const project of newProjects) {
-      await addProject(project);
-    }
-
-    // If some were duplicates, notify the user
-    if (duplicateCount > 0) {
-      toast({
-        title: "Some projects skipped",
-        description: `${duplicateCount} duplicate project${duplicateCount > 1 ? "s were" : " was"} skipped.`,
-      });
-    }
-  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-surface-base">
@@ -144,25 +107,10 @@ export default function ProjectsPage() {
         <div className="w-full max-w-[1200px]">
           {/* Add Project Dropdown */}
           <div className="mb-6 flex justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="mono" size="md">
-                  <Plus aria-hidden="true" />
-                  Add Project
-                  <ButtonArrow icon={ChevronDown} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setIsAddDialogOpen(true)}>
-                  <FolderPlus aria-hidden="true" />
-                  Add Project
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setIsScanDialogOpen(true)}>
-                  <FolderSearch aria-hidden="true" />
-                  Scan Directory
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="mono" size="md" onClick={() => setIsAddDialogOpen(true)}>
+              <Plus aria-hidden="true" />
+              Add Project
+            </Button>
           </div>
 
           {/* Search and Filter Bar */}
@@ -330,12 +278,6 @@ export default function ProjectsPage() {
         existingProjectNames={projects.map((p) => p.name)}
       />
 
-      {/* Scan Directory Dialog */}
-      <ScanDirectoryDialog
-        open={isScanDialogOpen}
-        onOpenChange={setIsScanDialogOpen}
-        onAddProjects={handleAddMultipleProjects}
-      />
     </div>
   );
 }
