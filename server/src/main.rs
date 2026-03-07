@@ -121,6 +121,7 @@ async fn main() {
         .route("/api/health", get(routes::health))
         .nest("/api", routes::project_routes().with_state(database))
         .route("/api/beads", get(routes::beads::read_beads))
+        .route("/api/beads/create", post(routes::beads::create_bead_handler))
         // Dolt endpoints
         .route("/api/dolt/status", get(routes::dolt::dolt_status))
         .route("/api/dolt/databases", get(routes::dolt::dolt_databases))

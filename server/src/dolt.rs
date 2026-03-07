@@ -232,6 +232,108 @@ impl DoltManager {
         Ok(beads)
     }
 
+    /// Creates a new bead in a Dolt database and commits the change.
+    pub async fn create_bead(
+        &self,
+        db_name: &str,
+        id: &str,
+        title: &str,
+        description: Option<&str>,
+        issue_type: &str,
+        priority: i32,
+    ) -> Result<(), DoltError> {
+        let mut conn = self.pool.get_conn().await
+            .map_err(|e| DoltError::ConnectionFailed(e.to_string()))?;
+
+        let now = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let query = format!(
+            "INSERT INTO `{}`.issues (id, title, description, status, priority, issue_type, owner, created_at, updated_at) \
+             VALUES (:id, :title, :desc, 'open', :priority, :type, 'web-ui', :now, :now)",
+            db_name
+        );
+        conn.exec_drop(
+            &query,
+            mysql_async::params! {
+                "id" => id,
+                "title" => title,
+                "desc" => description,
+                "priority" => priority,
+                "type" => issue_type,
+                "now" => &now,
+            },
+        ).await.map_err(|e| DoltError::QueryFailed(format!("insert: {}", e)))?;
+
+        // Dolt commit
+        let commit_query = format!(
+            "SELECT DOLT_COMMIT('-Am', 'web-ui: create {}') FROM `{}`",
+            id, db_name
+        );
+        conn.query_drop(&commit_query).await
+            .map_err(|e| DoltError::QueryFailed(format!("dolt_commit: {}", e)))?;
+
+        info!("Created bead {} in Dolt (db: {})", id, db_name);
+        Ok(())
+    }
+
+    /// Updates a bead's fields in a Dolt database and commits the change.
+    pub async fn update_bead(
+        &self,
+        db_name: &str,
+        id: &str,
+        title: Option<&str>,
+        description: Option<&str>,
+        status: Option<&str>,
+    ) -> Result<(), DoltError> {
+        let mut sets = Vec::new();
+        let mut params: Vec<(Vec<u8>, mysql_async::Value)> = Vec::new();
+
+        if let Some(t) = title {
+            sets.push("title = :title".to_string());
+            params.push((b"title".to_vec(), t.into()));
+        }
+        if let Some(d) = description {
+            sets.push("description = :desc".to_string());
+            params.push((b"desc".to_vec(), d.into()));
+        }
+        if let Some(s) = status {
+            sets.push("status = :status".to_string());
+            params.push((b"status".to_vec(), s.into()));
+        }
+
+        if sets.is_empty() {
+            return Ok(());
+        }
+
+        let now = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        sets.push("updated_at = :now".to_string());
+        params.push((b"now".to_vec(), now.into()));
+        params.push((b"id".to_vec(), id.into()));
+
+        let mut conn = self.pool.get_conn().await
+            .map_err(|e| DoltError::ConnectionFailed(e.to_string()))?;
+
+        let query = format!(
+            "UPDATE `{}`.issues SET {} WHERE id = :id",
+            db_name,
+            sets.join(", ")
+        );
+        conn.exec_drop(&query, mysql_async::Params::Named(params.into_iter().collect()))
+            .await
+            .map_err(|e| DoltError::QueryFailed(format!("update: {}", e)))?;
+
+        // Dolt commit
+        let commit_query = format!(
+            "SELECT DOLT_COMMIT('-Am', 'web-ui: update {}') FROM `{}`",
+            id, db_name
+        );
+        conn.query_drop(&commit_query).await
+            .map_err(|e| DoltError::QueryFailed(format!("dolt_commit: {}", e)))?;
+
+        info!("Updated bead {} in Dolt (db: {})", id, db_name);
+        Ok(())
+    }
+
 }
 
 /// A discovered Dolt database.

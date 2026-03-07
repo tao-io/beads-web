@@ -10,6 +10,7 @@ import { ActivityTimeline } from "@/components/activity-timeline";
 import { AgentsPanel } from "@/components/agents-panel";
 import { BeadDetail } from "@/components/bead-detail";
 import { CommentList } from "@/components/comment-list";
+import { CreateBeadDialog } from "@/components/create-bead-dialog";
 import { EditableProjectName } from "@/components/editable-project-name";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { KanbanColumn } from "@/components/kanban-column";
@@ -108,6 +109,9 @@ export default function KanbanBoard() {
 
   // Agents panel state
   const [isAgentsOpen, setIsAgentsOpen] = useState(false);
+
+  // Create bead dialog state
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Show GitHub warning if project loaded, status checked, and either no remote or not authenticated
   const showGitHubWarning = !projectLoading &&
@@ -339,6 +343,7 @@ export default function KanbanBoard() {
           // Unknown status warning
           unknownStatusCount={unknownStatusBeads.length}
           unknownStatusNames={unknownStatusNames}
+          onNewBead={() => setIsCreateOpen(true)}
         />
       </div>
 
@@ -427,6 +432,16 @@ export default function KanbanBoard() {
         />
       )}
       </ErrorBoundary>
+
+      {/* Create Bead Dialog */}
+      {project?.path && (
+        <CreateBeadDialog
+          open={isCreateOpen}
+          onOpenChange={setIsCreateOpen}
+          projectPath={project.path}
+          onCreated={refreshBeads}
+        />
+      )}
 
       {/* GitHub Integration Warning Dialog */}
       <AlertDialog open={showGitHubWarning} onOpenChange={(open) => !open && setGithubWarningDismissed(true)}>

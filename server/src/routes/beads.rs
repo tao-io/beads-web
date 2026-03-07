@@ -375,6 +375,136 @@ pub async fn read_beads(
     (StatusCode::OK, Json(serde_json::json!({ "beads": beads })))
 }
 
+/// Request body for creating a new bead.
+#[derive(Debug, Deserialize)]
+pub struct CreateBeadRequest {
+    /// Project path or `dolt://dbname`
+    pub path: String,
+    /// Bead title (required)
+    pub title: String,
+    /// Bead description (optional)
+    pub description: Option<String>,
+    /// Issue type: task, bug, feature, epic (default: task)
+    pub issue_type: Option<String>,
+    /// Priority 0-4 (default: 2)
+    pub priority: Option<i32>,
+}
+
+/// POST /api/beads/create
+///
+/// Creates a new bead. For `dolt://` paths, inserts directly via Dolt SQL.
+/// For filesystem paths, delegates to `bd create` CLI.
+pub async fn create_bead_handler(
+    Extension(dolt_manager): Extension<Arc<DoltManager>>,
+    Json(req): Json<CreateBeadRequest>,
+) -> impl IntoResponse {
+    let title = req.title.trim();
+    if title.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "Title is required" })),
+        );
+    }
+
+    let issue_type = req.issue_type.as_deref().unwrap_or("task");
+    let priority = req.priority.unwrap_or(2).clamp(0, 4);
+
+    // Dolt-only path: insert via SQL
+    if let Some(db_name) = req.path.strip_prefix(DOLT_PATH_PREFIX) {
+        if !dolt_manager.is_available() && !dolt_manager.check_server().await {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({ "error": "Dolt server is not running" })),
+            );
+        }
+
+        // Generate a unique ID: prefix-shortid
+        let prefix = db_name.strip_prefix("beads_").unwrap_or(db_name);
+        let short_id = &Utc::now().timestamp_millis().to_string()[6..];
+        let bead_id = format!("{}-{}", prefix, short_id);
+
+        match dolt_manager.create_bead(
+            db_name,
+            &bead_id,
+            title,
+            req.description.as_deref(),
+            issue_type,
+            priority,
+        ).await {
+            Ok(()) => {
+                return (
+                    StatusCode::CREATED,
+                    Json(serde_json::json!({ "id": bead_id })),
+                );
+            }
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": e.to_string() })),
+                );
+            }
+        }
+    }
+
+    // Filesystem path: delegate to bd CLI
+    let project_path = std::path::PathBuf::from(&req.path);
+    if let Err(e) = validate_path_security(&project_path) {
+        return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": e })));
+    }
+
+    let mut args = vec![
+        "create".to_string(),
+        format!("--title={}", title),
+    ];
+    if let Some(ref desc) = req.description {
+        if !desc.trim().is_empty() {
+            args.push(format!("-d={}", desc));
+        }
+    }
+    args.push(format!("--type={}", issue_type));
+    args.push(format!("--priority={}", priority));
+
+    let result = tokio::time::timeout(
+        Duration::from_secs(30),
+        Command::new("bd").args(&args).current_dir(&project_path).output(),
+    ).await;
+
+    match result {
+        Ok(Ok(output)) => {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                // Try to extract bead ID from CLI output
+                let id = stdout.lines()
+                    .find_map(|line| {
+                        // bd create typically outputs the new bead ID
+                        let trimmed = line.trim();
+                        if !trimmed.is_empty() && !trimmed.starts_with("Created") {
+                            Some(trimmed.to_string())
+                        } else if trimmed.starts_with("Created") {
+                            // "Created beads-xxx" pattern
+                            trimmed.split_whitespace().last().map(|s| s.to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or_else(|| stdout.trim().to_string());
+                (StatusCode::CREATED, Json(serde_json::json!({ "id": id, "stdout": stdout.trim() })))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": stderr.trim() })))
+            }
+        }
+        Ok(Err(e)) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("Failed to execute bd: {}", e) })),
+        ),
+        Err(_) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            Json(serde_json::json!({ "error": "bd command timed out" })),
+        ),
+    }
+}
+
 /// Post-processes beads: resolves dependencies, infers parent-child from ID patterns, sets children.
 fn post_process_beads(mut beads: Vec<Bead>) -> Vec<Bead> {
     let mut parent_to_children: std::collections::HashMap<String, Vec<String>> =

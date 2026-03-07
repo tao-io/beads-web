@@ -127,6 +127,17 @@ export const tags = {
 /**
  * Beads API
  */
+/**
+ * Input for creating a new bead
+ */
+export interface CreateBeadInput {
+  path: string;
+  title: string;
+  description?: string;
+  issue_type?: string;
+  priority?: number;
+}
+
 export const beads = {
   read: async (path: string) => {
     const data = await fetchApi<{ beads: Bead[] }>(
@@ -135,6 +146,11 @@ export const beads = {
     BeadsResponseSchema.parse(data);
     return data;
   },
+
+  create: (data: CreateBeadInput) => fetchApi<{ id: string }>('/api/beads/create', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 };
 
 /**

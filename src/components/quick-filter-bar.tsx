@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { Search, X, ArrowUpDown, SlidersHorizontal, BrainCircuit, Bot, AlertTriangle } from 'lucide-react';
+import { Search, X, ArrowUpDown, SlidersHorizontal, BrainCircuit, Bot, AlertTriangle, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -78,6 +78,8 @@ interface QuickFilterBarProps {
   unknownStatusCount?: number;
   /** List of unknown status names for tooltip */
   unknownStatusNames?: string[];
+  /** Callback when "New" button is clicked */
+  onNewBead?: () => void;
 }
 
 const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
@@ -129,6 +131,7 @@ export function QuickFilterBar({
   hasProjectPath = true,
   unknownStatusCount = 0,
   unknownStatusNames = [],
+  onNewBead,
 }: QuickFilterBarProps) {
   const currentSortValue = `${sortField}_${sortDirection}`;
 
@@ -168,6 +171,18 @@ export function QuickFilterBar({
           </button>
         )}
       </div>
+
+      {/* New Bead Button */}
+      {onNewBead && (
+        <Button
+          size="sm"
+          onClick={onNewBead}
+          className="h-8 px-3 gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90 font-medium shadow-sm"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          New
+        </Button>
+      )}
 
       {/* Type Filter & Today - Unified Tabs */}
       <Tabs
