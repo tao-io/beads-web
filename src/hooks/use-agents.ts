@@ -7,8 +7,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Agent, AgentModel } from "@/types";
+
 import * as api from "@/lib/api";
+import { isDoltProject } from "@/lib/utils";
+import type { Agent, AgentModel } from "@/types";
 
 export interface UseAgentsResult {
   /** All agents for the project */
@@ -45,7 +47,7 @@ export function useAgents(projectPath: string): UseAgentsResult {
    * Load agents from the API
    */
   const loadAgents = useCallback(async () => {
-    if (!projectPath) {
+    if (!projectPath || isDoltProject(projectPath)) {
       setAgents([]);
       setIsLoading(false);
       return;

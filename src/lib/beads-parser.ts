@@ -5,7 +5,7 @@
  * common operations.
  */
 
-import type { Bead, BeadStatus, Epic, KnownRawStatus, StatusBadgeInfo } from "@/types";
+import type { Bead, BeadStatus, Epic, KnownRawStatus } from "@/types";
 import { STATUS_MAP } from "@/types";
 
 import * as api from './api';

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 import { CheckCircle2, ChevronDown, ChevronRight, Layers, Loader2, MessageSquare } from "lucide-react";
 
+import { CopyableText } from "@/components/copyable-text";
 import { DependencyBadge } from "@/components/dependency-badge";
 import { DesignDocPreview } from "@/components/design-doc-preview";
 import { SubtaskList, ChildPRStatus } from "@/components/subtask-list";
@@ -13,7 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import * as api from "@/lib/api";
 import { closeBead } from "@/lib/cli";
 import { computeEpicProgress } from "@/lib/epic-parser";
-import { cn } from "@/lib/utils";
+import { formatBeadId, truncate } from "@/lib/bead-utils";
+import { cn, isDoltProject } from "@/lib/utils";
 import type { Bead, Epic, EpicProgress } from "@/types";
 
 export interface EpicCardProps {
@@ -35,26 +37,6 @@ export interface EpicCardProps {
   projectPath?: string;
   /** Callback after epic is closed (to refresh board) */
   onUpdate?: () => void;
-}
-
-/**
- * Format bead ID for display
- */
-function formatBeadId(id: string): string {
-  if (id.startsWith("BD-") || id.startsWith("bd-")) {
-    return id.length > 10 ? 'BD-' + id.slice(-6) : id.toUpperCase();
-  }
-  const parts = id.split("-");
-  const shortId = parts[parts.length - 1];
-  return 'BD-' + shortId.slice(0, 6);
-}
-
-/**
- * Truncate text to max length
- */
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + "…";
 }
 
 /**
@@ -112,7 +94,7 @@ export function EpicCard({
 
   // Fetch PR status for all children
   const fetchChildPRStatuses = useCallback(async () => {
-    if (!projectPath || children.length === 0) return;
+    if (!projectPath || isDoltProject(projectPath) || children.length === 0) return;
 
     const statusMap = new Map<string, ChildPRStatus>();
 
@@ -229,10 +211,14 @@ export function EpicCard({
             <Layers className="h-4 w-4 text-purple-400" aria-hidden="true" />
             <span className="text-xs font-mono text-zinc-400">
               {ticketNumber !== undefined && (
-                <span className="font-semibold text-white">#{ticketNumber}</span>
+                <CopyableText copyText={`#${ticketNumber}`} className="font-semibold text-white">
+                  #{ticketNumber}
+                </CopyableText>
               )}
               {ticketNumber !== undefined && " "}
-              {formatBeadId(epic.id)}
+              <CopyableText copyText={epic.id}>
+                {formatBeadId(epic.id)}
+              </CopyableText>
             </span>
           </div>
           <div className="flex items-center gap-1.5">

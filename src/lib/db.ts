@@ -86,7 +86,7 @@ export async function createTag(input: CreateTagInput): Promise<Tag> {
  * Updates an existing tag
  */
 export async function updateTag(input: UpdateTagInput): Promise<Tag> {
-  const { id, ...data } = input;
+  const { id: _id, ...data } = input;
   // Note: API doesn't have a separate update endpoint, using create for now
   // This would need backend support for tag updates
   return api.tags.create(data as CreateTagInput);

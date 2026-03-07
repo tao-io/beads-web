@@ -3,8 +3,9 @@
 import { Check, Circle, Clock, FileCheck, GitPullRequest, GitMerge, Link2 } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { truncate } from "@/lib/bead-utils";
 import { cn } from "@/lib/utils";
-import type { Bead, BeadStatus, PRChecks } from "@/types";
+import type { Bead, BeadStatus } from "@/types";
 
 /**
  * PR status for a child task (used for icon display)
@@ -143,14 +144,6 @@ function PRStatusIcon({ prStatus }: { prStatus: ChildPRStatus | undefined }) {
       </Tooltip>
     </TooltipProvider>
   );
-}
-
-/**
- * Truncate text to max length
- */
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + "…";
 }
 
 /**

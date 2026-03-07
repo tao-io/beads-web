@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import * as api from "@/lib/api";
+import { isDoltProject } from "@/lib/utils";
 import type { PRStatus } from "@/types";
 
 /** Default polling interval in milliseconds */
@@ -73,7 +74,7 @@ export function usePRStatus(
    * Load PR status for the bead
    */
   const loadStatus = useCallback(async () => {
-    if (!projectPath || !beadId) {
+    if (!projectPath || !beadId || isDoltProject(projectPath)) {
       setStatus(null);
       setIsLoading(false);
       return;

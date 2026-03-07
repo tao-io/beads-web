@@ -5,7 +5,6 @@ import { PackageOpen } from "lucide-react";
 import { BeadCard } from "@/components/bead-card";
 import { EpicCard } from "@/components/epic-card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { Bead, BeadStatus, Epic } from "@/types";
 
@@ -126,7 +125,7 @@ export function KanbanColumn({
       </div>
 
       {/* Scrollable Bead List */}
-      <ScrollArea className="flex-1 min-h-0 p-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3">
         <div className="space-y-3">
           {beads.map((bead) => {
             // Render EpicCard for epics, BeadCard for standalone tasks
@@ -164,7 +163,7 @@ export function KanbanColumn({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

@@ -136,7 +136,7 @@ export function ActivityTimeline({ bead, comments, childBeads = [] }: ActivityTi
 
         {/* Events */}
         <div className="space-y-3">
-          {events.map((event, index) => (
+          {events.map((event) => (
             <div
               key={event.id}
               className="relative flex items-start gap-3 pl-5"

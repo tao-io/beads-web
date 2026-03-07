@@ -81,6 +81,7 @@ function MorphingDialogProvider({
       contentElement,
       setContentElement,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isOpen, contentElement]
   );
 
@@ -180,6 +181,7 @@ function MorphingDialogContent({
     return () => {
       setContentElement(null);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setContentElement]);
 
   useEffect(() => {
@@ -227,6 +229,7 @@ function MorphingDialogContent({
     } else {
       triggerRef.current?.focus();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, triggerRef]);
 
   useClickOutside(containerRef, () => {

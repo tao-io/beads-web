@@ -480,6 +480,7 @@ function KanbanOverlay({ children, className }: KanbanOverlayProps) {
     } else {
       setDimensions(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
 
   const style = {

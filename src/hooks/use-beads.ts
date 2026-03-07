@@ -15,6 +15,7 @@ import {
   groupBeadsByStatus,
   assignTicketNumbers,
 } from "@/lib/beads-parser";
+import { isDoltProject } from "@/lib/utils";
 import type { Bead, BeadStatus } from "@/types";
 
 /**
@@ -151,6 +152,17 @@ export function useBeads(projectPath: string): UseBeadsResult {
       console.warn("File watcher error:", watchError);
     }
   }, [watchError, error]);
+
+  // Polling for dolt:// projects (no file watcher available)
+  useEffect(() => {
+    if (!projectPath || !isDoltProject(projectPath)) return;
+
+    const intervalId = setInterval(() => {
+      loadBeads();
+    }, 15_000);
+
+    return () => clearInterval(intervalId);
+  }, [projectPath, loadBeads]);
 
   return {
     beads,

@@ -3,6 +3,7 @@
  * Replaces Tauri invoke() calls with HTTP fetch to backend
  */
 
+import { BeadsResponseSchema, PRStatusSchema, WorktreeStatusSchema } from '@/lib/api-schemas';
 import type { Project, Tag, Bead, WorktreeStatus, WorktreeEntry, PRStatus, PRFilesResponse, MemoryResponse, MemoryStats, MemoryEntry, Agent, AgentModel } from '@/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3008';
@@ -127,9 +128,13 @@ export const tags = {
  * Beads API
  */
 export const beads = {
-  read: (path: string) => fetchApi<{ beads: Bead[] }>(
-    `/api/beads?path=${encodeURIComponent(path)}`
-  ),
+  read: async (path: string) => {
+    const data = await fetchApi<{ beads: Bead[] }>(
+      `/api/beads?path=${encodeURIComponent(path)}`
+    );
+    BeadsResponseSchema.parse(data);
+    return data;
+  },
 };
 
 /**
@@ -234,9 +239,13 @@ export const git = {
   ),
 
   // Worktree endpoints
-  worktreeStatus: (repoPath: string, beadId: string) => fetchApi<WorktreeStatus>(
-    `/api/git/worktree-status?repo_path=${encodeURIComponent(repoPath)}&bead_id=${encodeURIComponent(beadId)}`
-  ),
+  worktreeStatus: async (repoPath: string, beadId: string) => {
+    const data = await fetchApi<WorktreeStatus>(
+      `/api/git/worktree-status?repo_path=${encodeURIComponent(repoPath)}&bead_id=${encodeURIComponent(beadId)}`
+    );
+    WorktreeStatusSchema.parse(data);
+    return data;
+  },
 
   createWorktree: (repoPath: string, beadId: string, baseBranch = 'main') =>
     fetchApi<CreateWorktreeResponse>('/api/git/worktree', {
@@ -255,9 +264,13 @@ export const git = {
   ),
 
   // PR endpoints
-  prStatus: (repoPath: string, beadId: string) => fetchApi<PRStatus>(
-    `/api/git/pr-status?repo_path=${encodeURIComponent(repoPath)}&bead_id=${encodeURIComponent(beadId)}`
-  ),
+  prStatus: async (repoPath: string, beadId: string) => {
+    const data = await fetchApi<PRStatus>(
+      `/api/git/pr-status?repo_path=${encodeURIComponent(repoPath)}&bead_id=${encodeURIComponent(beadId)}`
+    );
+    PRStatusSchema.parse(data);
+    return data;
+  },
 
   prFiles: (repoPath: string, beadId: string) => fetchApi<PRFilesResponse>(
     `/api/git/pr-files?repo_path=${encodeURIComponent(repoPath)}&bead_id=${encodeURIComponent(beadId)}`

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import * as api from "@/lib/api";
+import { isDoltProject } from "@/lib/utils";
 
 export interface GitHubStatusResult {
   hasRemote: boolean;
@@ -26,7 +27,7 @@ export function useGitHubStatus(projectPath: string | null): GitHubStatusResult 
   const [error, setError] = useState<Error | null>(null);
 
   const fetchStatus = useCallback(async () => {
-    if (!projectPath) {
+    if (!projectPath || isDoltProject(projectPath)) {
       // No project path, reset to defaults
       setHasRemote(true);
       setIsAuthenticated(true);

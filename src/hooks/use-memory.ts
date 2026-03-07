@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 import * as api from "@/lib/api";
+import { isDoltProject } from "@/lib/utils";
 import type { MemoryEntry, MemoryStats, MemoryType } from "@/types";
 
 export interface UseMemoryResult {
@@ -69,7 +70,7 @@ export function useMemory(projectPath: string): UseMemoryResult {
    * Load memory entries from the API
    */
   const loadMemory = useCallback(async () => {
-    if (!projectPath) {
+    if (!projectPath || isDoltProject(projectPath)) {
       setEntries([]);
       setStats(EMPTY_STATS);
       setIsLoading(false);

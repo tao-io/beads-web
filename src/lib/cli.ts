@@ -98,6 +98,44 @@ export async function updateStatus(
 }
 
 /**
+ * Update the title of a bead
+ *
+ * Executes: bd update <beadId> --title "<title>"
+ */
+export async function updateTitle(
+  beadId: string,
+  title: string,
+  cwd?: string
+): Promise<void> {
+  const result = await executeBdCommand(
+    ["update", beadId, "--title", title],
+    cwd
+  );
+  if (!result.success) {
+    throw new Error(result.stderr || `Failed to update title: exit code ${result.code}`);
+  }
+}
+
+/**
+ * Update the description of a bead
+ *
+ * Executes: bd update <beadId> --description "<description>"
+ */
+export async function updateDescription(
+  beadId: string,
+  description: string,
+  cwd?: string
+): Promise<void> {
+  const result = await executeBdCommand(
+    ["update", beadId, "-d", description],
+    cwd
+  );
+  if (!result.success) {
+    throw new Error(result.stderr || `Failed to update description: exit code ${result.code}`);
+  }
+}
+
+/**
  * Close a bead
  *
  * Executes: bd close <beadId>

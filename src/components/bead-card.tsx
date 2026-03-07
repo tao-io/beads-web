@@ -2,6 +2,7 @@
 
 import { FolderOpen, GitPullRequest, Link2, MessageSquare, Check, X, Clock } from "lucide-react";
 
+import { CopyableText } from "@/components/copyable-text";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -10,6 +11,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { formatBeadId, formatWorktreePath, isBlocked, truncate } from "@/lib/bead-utils";
 import { cn } from "@/lib/utils";
 import type { Bead, WorktreeStatus, PRStatus, StatusBadgeInfo } from "@/types";
 
@@ -127,59 +129,6 @@ function getPRChecksDisplay(prStatus: PRStatus): { icon: React.ReactNode; text: 
 }
 
 /**
- * Format worktree path for display (shorten if needed)
- */
-function formatWorktreePath(path: string): string {
-  // Extract the relative part after .worktrees/
-  const match = path.match(/\.worktrees\/(.+)$/);
-  if (match) {
-    return `.worktrees/${match[1]}`;
-  }
-  // Fallback: show last two path segments
-  const parts = path.split("/");
-  if (parts.length >= 2) {
-    return parts.slice(-2).join("/");
-  }
-  return path;
-}
-
-/**
- * Detect if bead is blocked by checking for unresolved dependencies
- * A task is blocked only if it has unresolved dependencies
- * Closed tasks are never blocked (they've completed)
- * Note: The deps field only contains UNRESOLVED dependencies (backend filters out closed deps)
- */
-function isBlocked(bead: Bead): boolean {
-  // Closed tasks are never blocked (they've completed)
-  if (bead.status === 'closed') return false;
-  // A task is blocked if it has unresolved dependencies
-  return (bead.deps ?? []).length > 0;
-}
-
-/**
- * Truncate text to a maximum length with ellipsis
- */
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + "...";
-}
-
-/**
- * Format bead ID for display (short form)
- */
-function formatBeadId(id: string): string {
-  // If ID is like "project-abc123", show "BD-abc123"
-  // If already has BD prefix, show as-is but truncate if needed
-  if (id.startsWith("BD-") || id.startsWith("bd-")) {
-    return id.length > 10 ? `BD-${id.slice(-6)}` : id.toUpperCase();
-  }
-  // Extract last part after dash
-  const parts = id.split("-");
-  const shortId = parts[parts.length - 1];
-  return `BD-${shortId.slice(0, 6)}`;
-}
-
-/**
  * Get the display label for the bead type
  */
 function getTypeLabel(bead: Bead): string {
@@ -243,10 +192,14 @@ export function BeadCard({ bead, ticketNumber, worktreeStatus, prStatus, isSelec
         <div className="flex items-center justify-between">
           <CardDescription className="text-xs font-mono">
             {ticketNumber !== undefined && (
-              <span className="font-semibold text-foreground">#{ticketNumber}</span>
+              <CopyableText copyText={`#${ticketNumber}`} className="font-semibold text-foreground">
+                #{ticketNumber}
+              </CopyableText>
             )}
             {ticketNumber !== undefined && " "}
-            {formatBeadId(bead.id)}
+            <CopyableText copyText={bead.id}>
+              {formatBeadId(bead.id)}
+            </CopyableText>
           </CardDescription>
           <div className="flex items-center gap-1.5">
             {blocked && (

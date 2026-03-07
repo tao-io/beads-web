@@ -10,6 +10,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 
 import * as api from "@/lib/api";
+import { isDoltProject } from "@/lib/utils";
 
 /** Return type for the useFileWatcher hook. */
 interface UseFileWatcherResult {
@@ -72,7 +73,7 @@ export function useFileWatcher(
 
   useEffect(() => {
     // Don't set up watcher if no project path or dolt-only project
-    if (!projectPath || projectPath.startsWith("dolt://")) {
+    if (!projectPath || isDoltProject(projectPath)) {
       return;
     }
 

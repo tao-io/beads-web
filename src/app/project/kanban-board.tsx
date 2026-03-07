@@ -12,6 +12,7 @@ import { AgentsPanel } from "@/components/agents-panel";
 import { BeadDetail } from "@/components/bead-detail";
 import { CommentList } from "@/components/comment-list";
 import { EditableProjectName } from "@/components/editable-project-name";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { KanbanColumn } from "@/components/kanban-column";
 import { MemoryPanel } from "@/components/memory-panel";
 import { QuickFilterBar } from "@/components/quick-filter-bar";
@@ -25,6 +26,7 @@ import {
   AlertDialogClose,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useBeadDetail } from "@/hooks/use-bead-detail";
 import { useBeadFilters } from "@/hooks/use-bead-filters";
 import { useBeads } from "@/hooks/use-beads";
 import { useGitHubStatus } from "@/hooks/use-github-status";
@@ -32,6 +34,7 @@ import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useProject } from "@/hooks/use-project";
 import { useWorktreeStatuses } from "@/hooks/use-worktree-statuses";
 import { getUnknownStatusBeads, getUnknownStatusNames } from "@/lib/beads-parser";
+import { isDoltProject } from "@/lib/utils";
 import type { Bead, BeadStatus } from "@/types";
 
 /**
@@ -132,7 +135,7 @@ export default function KanbanBoard() {
   // Filter out closed beads to avoid unnecessary polling for finalized tasks
   const beadIds = useMemo(() => beads.filter(b => b.status !== 'closed').map(b => b.id), [beads]);
 
-  const isDoltOnly = project?.path?.startsWith("dolt://") ?? false;
+  const isDoltOnly = isDoltProject(project?.path);
 
   // Worktree statuses for PR workflow (skip for dolt-only projects)
   const { statuses: worktreeStatuses } = useWorktreeStatuses(
@@ -180,15 +183,14 @@ export default function KanbanBoard() {
   const unknownStatusBeads = useMemo(() => getUnknownStatusBeads(beads), [beads]);
   const unknownStatusNames = useMemo(() => getUnknownStatusNames(beads), [beads]);
 
-  // Detail sheet state
-  const [detailBeadId, setDetailBeadId] = useState<string | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-
-  // Get the actual bead from the current beads array to ensure fresh data
-  const detailBead = useMemo(() => {
-    if (!detailBeadId) return null;
-    return beads.find((b) => b.id === detailBeadId) || null;
-  }, [detailBeadId, beads]);
+  // Detail panel state
+  const {
+    detailBead,
+    isDetailOpen,
+    openBead,
+    handleDetailOpenChange,
+    navigateToBead,
+  } = useBeadDetail(beads);
 
   // Ref for search input (keyboard navigation)
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -202,11 +204,10 @@ export default function KanbanBoard() {
       // Just highlight, don't open detail
     },
     onOpen: (bead) => {
-      setDetailBeadId(bead.id);
-      setIsDetailOpen(true);
+      openBead(bead);
     },
     onClose: () => {
-      setIsDetailOpen(false);
+      handleDetailOpenChange(false);
     },
     searchInputRef,
     isDetailOpen,
@@ -220,43 +221,12 @@ export default function KanbanBoard() {
   }, [projectId, router]);
 
   /**
-   * Handle bead selection - opens detail panel
-   * Works for both epics and standalone tasks
-   */
-  const handleSelectBead = (bead: Bead) => {
-    setDetailBeadId(bead.id);
-    setIsDetailOpen(true);
-  };
-
-  /**
-   * Handle child task click from within an epic
-   */
-  const handleChildClick = (child: Bead) => {
-    setDetailBeadId(child.id);
-    setIsDetailOpen(true);
-  };
-
-  /**
-   * Handle navigation to a dependency from DependencyBadge
-   */
-  const handleNavigateToDependency = (beadId: string) => {
-    setDetailBeadId(beadId);
-    setIsDetailOpen(true);
-  };
-
-  /**
    * Handle navigation from Memory panel to a bead
-   * Closes the memory panel and opens the bead detail
    */
   const handleMemoryNavigateToBead = useCallback((beadId: string) => {
     setIsMemoryOpen(false);
-    // Find the bead - it may be a child task with a dot ID
-    const found = beads.find((b) => b.id === beadId);
-    if (found) {
-      setDetailBeadId(found.id);
-      setIsDetailOpen(true);
-    }
-  }, [beads]);
+    navigateToBead(beadId);
+  }, [navigateToBead]);
 
   // Redirect state while no project ID
   if (!projectId) {
@@ -375,9 +345,9 @@ export default function KanbanBoard() {
                 allBeads={beads}
                 selectedBeadId={selectedId}
                 ticketNumbers={ticketNumbers}
-                onSelectBead={handleSelectBead}
-                onChildClick={handleChildClick}
-                onNavigateToDependency={handleNavigateToDependency}
+                onSelectBead={openBead}
+                onChildClick={openBead}
+                onNavigateToDependency={navigateToBead}
                 projectPath={project?.path}
                 onUpdate={refreshBeads}
               />
@@ -387,21 +357,18 @@ export default function KanbanBoard() {
       </main>
 
       {/* Bead Detail Sheet */}
+      <ErrorBoundary label="Bead Detail">
       {detailBead && (
         <BeadDetail
           bead={detailBead}
           ticketNumber={ticketNumbers.get(detailBead.id)}
           worktreeStatus={isDoltOnly ? undefined : worktreeStatuses[detailBead.id]}
           open={isDetailOpen}
-          onOpenChange={(open) => {
-            setIsDetailOpen(open);
-            if (!open) {
-              setDetailBeadId(null);
-            }
-          }}
+          onOpenChange={handleDetailOpenChange}
           projectPath={project?.path ?? ""}
           allBeads={beads}
-          onChildClick={handleChildClick}
+          onChildClick={openBead}
+          onUpdate={refreshBeads}
         >
           <CommentList
             comments={detailBead.comments}
@@ -418,8 +385,10 @@ export default function KanbanBoard() {
           />
         </BeadDetail>
       )}
+      </ErrorBoundary>
 
       {/* Memory Panel */}
+      <ErrorBoundary label="Memory Panel">
       {project?.path && (
         <MemoryPanel
           open={isMemoryOpen}
@@ -428,8 +397,10 @@ export default function KanbanBoard() {
           onNavigateToBead={handleMemoryNavigateToBead}
         />
       )}
+      </ErrorBoundary>
 
       {/* Agents Panel */}
+      <ErrorBoundary label="Agents Panel">
       {project?.path && (
         <AgentsPanel
           open={isAgentsOpen}
@@ -437,6 +408,7 @@ export default function KanbanBoard() {
           projectPath={project.path}
         />
       )}
+      </ErrorBoundary>
 
       {/* GitHub Integration Warning Dialog */}
       <AlertDialog open={showGitHubWarning} onOpenChange={(open) => !open && setGithubWarningDismissed(true)}>

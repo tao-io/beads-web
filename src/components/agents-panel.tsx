@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
+
+import { Bot, ChevronDown, Loader2, Wrench } from "lucide-react";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -8,10 +12,8 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { Bot, ChevronDown, Loader2, Wrench } from "lucide-react";
 import { useAgents } from "@/hooks/use-agents";
+import { cn } from "@/lib/utils";
 import type { Agent, AgentModel } from "@/types";
 
 export interface AgentsPanelProps {
