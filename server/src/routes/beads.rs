@@ -182,10 +182,15 @@ pub struct Comment {
 }
 
 /// Runs a `bd` CLI command and returns stdout.
+///
+/// Uses `find_bd()` to locate the binary — searches PATH and common install locations.
 async fn run_bd(args: &[&str], cwd: &Path) -> Result<String, String> {
+    let bd_path = super::find_bd()
+        .ok_or_else(|| "bd CLI not found. Install beads (https://github.com/steveyegge/beads) or add bd to PATH.".to_string())?;
+
     let result = tokio::time::timeout(
         Duration::from_secs(30),
-        Command::new("bd").args(args).current_dir(cwd).output(),
+        Command::new(bd_path).args(args).current_dir(cwd).output(),
     )
     .await;
 

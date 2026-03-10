@@ -116,6 +116,14 @@ async fn main() {
         info!("Dolt server not detected — will use bd CLI / JSONL fallback");
     }
 
+    // Check for bd CLI availability
+    if let Some(bd) = routes::find_bd() {
+        info!("bd CLI found: {}", bd.display());
+    } else {
+        tracing::warn!("⚠ bd CLI not found — beads read/write will not work for filesystem projects");
+        tracing::warn!("  Install: https://github.com/steveyegge/beads");
+    }
+
     // Initialize version check cache
     let version_cache = routes::version::new_cache();
 

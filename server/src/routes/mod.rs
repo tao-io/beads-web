@@ -21,7 +21,8 @@ pub use watch::watch_beads;
 use axum::{response::IntoResponse, Json};
 use directories::UserDirs;
 use serde::Serialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 /// Health check response structure.
 #[derive(Serialize)]
@@ -34,6 +35,69 @@ pub struct HealthResponse {
 /// Returns a JSON response indicating the server is running.
 pub async fn health() -> impl IntoResponse {
     Json(HealthResponse { status: "ok" })
+}
+
+/// Cached path to the `bd` CLI binary.
+///
+/// Resolved once at first use and cached for the process lifetime.
+/// Searches PATH first, then common install locations.
+static BD_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+
+/// Returns the path to the `bd` CLI binary, or `None` if not found.
+///
+/// Search order:
+/// 1. `bd` in PATH (via `which`/`where`)
+/// 2. `~/.cargo/bin/bd`
+/// 3. `~/.local/bin/bd`
+/// 4. `/usr/local/bin/bd`
+/// 5. `~/.beads/bin/bd`
+pub fn find_bd() -> Option<&'static PathBuf> {
+    BD_PATH.get_or_init(|| {
+        // Try PATH first
+        if let Ok(output) = std::process::Command::new(if cfg!(windows) { "where" } else { "which" })
+            .arg("bd")
+            .output()
+        {
+            if output.status.success() {
+                let path_str = String::from_utf8_lossy(&output.stdout);
+                let path = PathBuf::from(path_str.trim().lines().next().unwrap_or("").trim());
+                if path.exists() {
+                    tracing::info!("Found bd CLI in PATH: {}", path.display());
+                    return Some(path);
+                }
+            }
+        }
+
+        // Search common locations
+        let home = UserDirs::new().map(|d| d.home_dir().to_path_buf());
+        let candidates: Vec<PathBuf> = if let Some(ref home) = home {
+            let mut c = vec![
+                home.join(".cargo").join("bin").join(if cfg!(windows) { "bd.exe" } else { "bd" }),
+                home.join(".local").join("bin").join("bd"),
+                home.join(".beads").join("bin").join("bd"),
+            ];
+            if !cfg!(windows) {
+                c.push(PathBuf::from("/usr/local/bin/bd"));
+            }
+            c
+        } else {
+            vec![]
+        };
+
+        for candidate in &candidates {
+            if candidate.exists() {
+                tracing::info!("Found bd CLI at: {}", candidate.display());
+                return Some(candidate.clone());
+            }
+        }
+
+        tracing::warn!(
+            "bd CLI not found. Searched PATH and: {}. \
+             Install bd (https://github.com/steveyegge/beads) or add it to PATH.",
+            candidates.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(", ")
+        );
+        None
+    }).as_ref()
 }
 
 /// Validates that a path is safe to access.

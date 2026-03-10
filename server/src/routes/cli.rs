@@ -101,7 +101,18 @@ pub async fn bd_command(Json(req): Json<BdCommandRequest>) -> impl IntoResponse 
     };
 
     // Build and execute the command with timeout
-    let mut cmd = Command::new("bd");
+    let bd_path = match super::find_bd() {
+        Some(p) => p,
+        None => {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({
+                    "error": "bd CLI not found. Install beads (https://github.com/steveyegge/beads) or add bd to PATH."
+                })),
+            ).into_response();
+        }
+    };
+    let mut cmd = Command::new(bd_path);
     cmd.args(&req.args).current_dir(&cwd);
 
     let result = tokio::time::timeout(Duration::from_secs(30), cmd.output()).await;
