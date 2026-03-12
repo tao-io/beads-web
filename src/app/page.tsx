@@ -264,9 +264,9 @@ export default function ProjectsPage() {
               <button
                 type="button"
                 onClick={toggleShowArchived}
-                className="flex items-center gap-2 text-xs text-t-muted hover:text-t-secondary transition-colors"
+                className="flex items-center gap-2 text-sm text-t-muted hover:text-t-secondary transition-colors"
               >
-                <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+                <Archive className="h-4 w-4" aria-hidden="true" />
                 {showArchived ? "Hide archived" : "Show archived"}
               </button>
             </div>

@@ -201,7 +201,7 @@ export function ProjectSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={browsing ? "sm:max-w-lg" : "sm:max-w-md"}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>
           <DialogDescription>
@@ -284,25 +284,22 @@ export function ProjectSettingsDialog({
 
           {!browsing && (
             <>
-              {/* Archive / Delete actions */}
-              {(onArchive || onDelete) && (
-                <div className="flex items-center gap-2 border-t border-b-default pt-4 mt-4">
+              <DialogFooter className="flex-row items-center border-t border-b-default pt-4 mt-4 gap-2">
+                <div className="flex items-center gap-2">
                   {onArchive && !archivedAt && (
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       onClick={() => { onArchive(); onOpenChange(false); }}
                     >
                       <Archive className="h-4 w-4" aria-hidden="true" />
-                      Archive
+                      Archive project
                     </Button>
                   )}
                   {onDelete && (
                     <Button
                       type="button"
                       variant="destructive"
-                      size="sm"
                       onClick={() => {
                         const confirmed = window.confirm(
                           "Delete this project from the dashboard? Your beads data and files will not be affected."
@@ -314,13 +311,11 @@ export function ProjectSettingsDialog({
                       }}
                     >
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      Delete
+                      Delete project
                     </Button>
                   )}
                 </div>
-              )}
-              <DialogFooter>
-                <Button type="submit" disabled={isSubmitting || !name.trim()}>
+                <Button type="submit" disabled={isSubmitting || !name.trim()} className="ml-auto">
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
