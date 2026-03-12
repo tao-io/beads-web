@@ -43,6 +43,7 @@ pub struct Project {
     pub local_path: Option<String>,
     pub last_opened: String,
     pub created_at: String,
+    pub archived_at: Option<String>,
 }
 
 /// A project with its associated tags
@@ -56,6 +57,7 @@ pub struct ProjectWithTags {
     pub tags: Vec<Tag>,
     pub last_opened: String,
     pub created_at: String,
+    pub archived_at: Option<String>,
 }
 
 /// A tag stored in the local database
@@ -202,6 +204,7 @@ impl Database {
 
         let migrations: Vec<(i64, &str)> = vec![
             (1, "ALTER TABLE projects ADD COLUMN local_path TEXT"),
+            (2, "ALTER TABLE projects ADD COLUMN archived_at TEXT"),
         ];
 
         let now = Utc::now().to_rfc3339();
@@ -221,9 +224,14 @@ impl Database {
 
     // ===== Project CRUD =====
 
-    /// Gets all projects with their tags, ordered by last opened
+    /// Gets all active (non-archived) projects with their tags, ordered by last opened
     pub fn get_projects_with_tags(&self) -> Result<Vec<ProjectWithTags>, DbError> {
-        let projects = self.get_projects()?;
+        self.get_projects_with_tags_filtered(false)
+    }
+
+    /// Gets projects with their tags, optionally including archived
+    pub fn get_projects_with_tags_filtered(&self, include_archived: bool) -> Result<Vec<ProjectWithTags>, DbError> {
+        let projects = self.get_projects_filtered(include_archived)?;
         let mut result = Vec::with_capacity(projects.len());
 
         for project in projects {
@@ -236,18 +244,27 @@ impl Database {
                 tags,
                 last_opened: project.last_opened,
                 created_at: project.created_at,
+                archived_at: project.archived_at,
             });
         }
 
         Ok(result)
     }
 
-    /// Gets all projects, ordered by last opened
+    /// Gets all active (non-archived) projects, ordered by last opened
     pub fn get_projects(&self) -> Result<Vec<Project>, DbError> {
+        self.get_projects_filtered(false)
+    }
+
+    /// Gets projects, optionally including archived
+    pub fn get_projects_filtered(&self, include_archived: bool) -> Result<Vec<Project>, DbError> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT id, name, path, local_path, last_opened, created_at FROM projects ORDER BY last_opened DESC",
-        )?;
+        let sql = if include_archived {
+            "SELECT id, name, path, local_path, last_opened, created_at, archived_at FROM projects ORDER BY last_opened DESC"
+        } else {
+            "SELECT id, name, path, local_path, last_opened, created_at, archived_at FROM projects WHERE archived_at IS NULL ORDER BY last_opened DESC"
+        };
+        let mut stmt = conn.prepare(sql)?;
 
         let projects = stmt
             .query_map([], |row| {
@@ -258,6 +275,7 @@ impl Database {
                     local_path: row.get(3)?,
                     last_opened: row.get(4)?,
                     created_at: row.get(5)?,
+                    archived_at: row.get(6)?,
                 })
             })?
             .collect::<SqliteResult<Vec<_>>>()?;
@@ -283,6 +301,7 @@ impl Database {
             local_path: input.local_path,
             last_opened: now.clone(),
             created_at: now,
+            archived_at: None,
         })
     }
 
@@ -332,7 +351,7 @@ impl Database {
 
         // Fetch and return updated project
         let project = conn.query_row(
-            "SELECT id, name, path, local_path, last_opened, created_at FROM projects WHERE id = ?1",
+            "SELECT id, name, path, local_path, last_opened, created_at, archived_at FROM projects WHERE id = ?1",
             params![id],
             |row| {
                 Ok(Project {
@@ -342,6 +361,7 @@ impl Database {
                     local_path: row.get(3)?,
                     last_opened: row.get(4)?,
                     created_at: row.get(5)?,
+                    archived_at: row.get(6)?,
                 })
             },
         )?;
@@ -358,6 +378,33 @@ impl Database {
             return Err(DbError::ProjectNotFound(id.to_string()));
         }
 
+        Ok(())
+    }
+
+    /// Archives a project by setting archived_at timestamp
+    pub fn archive_project(&self, id: &str) -> Result<(), DbError> {
+        let conn = self.conn.lock().unwrap();
+        let now = Utc::now().to_rfc3339();
+        let rows = conn.execute(
+            "UPDATE projects SET archived_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
+        if rows == 0 {
+            return Err(DbError::ProjectNotFound(id.to_string()));
+        }
+        Ok(())
+    }
+
+    /// Unarchives a project by clearing archived_at
+    pub fn unarchive_project(&self, id: &str) -> Result<(), DbError> {
+        let conn = self.conn.lock().unwrap();
+        let rows = conn.execute(
+            "UPDATE projects SET archived_at = NULL WHERE id = ?1",
+            params![id],
+        )?;
+        if rows == 0 {
+            return Err(DbError::ProjectNotFound(id.to_string()));
+        }
         Ok(())
     }
 
@@ -600,6 +647,36 @@ mod tests {
 
         let project_tags = db.get_project_tags(&project.id).unwrap();
         assert!(project_tags.is_empty());
+    }
+
+    #[test]
+    fn test_archive_unarchive_project() {
+        let db = Database::new_in_memory().unwrap();
+        let project = db
+            .create_project(CreateProjectInput {
+                name: "Archivable".to_string(),
+                path: "/archive/me".to_string(),
+                local_path: None,
+            })
+            .unwrap();
+
+        // Initially visible
+        let projects = db.get_projects_filtered(false).unwrap();
+        assert_eq!(projects.len(), 1);
+
+        // Archive it
+        db.archive_project(&project.id).unwrap();
+        let active = db.get_projects_filtered(false).unwrap();
+        assert!(active.is_empty());
+        let all = db.get_projects_filtered(true).unwrap();
+        assert_eq!(all.len(), 1);
+        assert!(all[0].archived_at.is_some());
+
+        // Unarchive it
+        db.unarchive_project(&project.id).unwrap();
+        let active = db.get_projects_filtered(false).unwrap();
+        assert_eq!(active.len(), 1);
+        assert!(active[0].archived_at.is_none());
     }
 
     #[test]

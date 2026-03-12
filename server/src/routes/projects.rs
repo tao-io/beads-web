@@ -3,11 +3,11 @@
 //! Provides CRUD endpoints for projects, tags, and project-tag relationships.
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::db::{
@@ -51,11 +51,19 @@ fn db_error_response(err: DbError) -> (StatusCode, Json<ErrorResponse>) {
 
 // ===== Project Routes =====
 
+/// Query parameters for listing projects
+#[derive(Deserialize)]
+pub struct ListProjectsParams {
+    pub include_archived: Option<bool>,
+}
+
 /// GET /api/projects - List all projects with their tags
 pub async fn list_projects(
     State(db): State<AppState>,
+    Query(params): Query<ListProjectsParams>,
 ) -> Result<Json<Vec<ProjectWithTags>>, (StatusCode, Json<ErrorResponse>)> {
-    let mut projects = db.get_projects_with_tags().map_err(db_error_response)?;
+    let include_archived = params.include_archived.unwrap_or(false);
+    let mut projects = db.get_projects_with_tags_filtered(include_archived).map_err(db_error_response)?;
     // Normalize Windows backslashes in paths for consistent frontend behavior
     for p in &mut projects {
         p.path = p.path.replace('\\', "/");
@@ -82,6 +90,7 @@ pub async fn create_project(
         tags: vec![],
         last_opened: project.last_opened,
         created_at: project.created_at,
+        archived_at: project.archived_at,
     };
 
     Ok((StatusCode::CREATED, Json(project_with_tags)))
@@ -104,6 +113,7 @@ pub async fn update_project(
         tags,
         last_opened: project.last_opened,
         created_at: project.created_at,
+        archived_at: project.archived_at,
     }))
 }
 
@@ -113,6 +123,24 @@ pub async fn delete_project(
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
     db.delete_project(&id).map_err(db_error_response)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// PATCH /api/projects/:id/archive - Archive a project
+pub async fn archive_project(
+    State(db): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    db.archive_project(&id).map_err(db_error_response)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// PATCH /api/projects/:id/unarchive - Unarchive a project
+pub async fn unarchive_project(
+    State(db): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    db.unarchive_project(&id).map_err(db_error_response)?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -176,6 +204,8 @@ pub fn project_routes() -> axum::Router<AppState> {
             "/projects/:id",
             patch(update_project).delete(delete_project),
         )
+        .route("/projects/:id/archive", patch(archive_project))
+        .route("/projects/:id/unarchive", patch(unarchive_project))
         // Tag routes
         .route("/tags", get(list_tags).post(create_tag))
         .route("/tags/:id", delete(delete_tag))
