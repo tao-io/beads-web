@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { loadProjectBeads, groupBeadsByStatus } from "@/lib/beads-parser";
+import * as api from "@/lib/api";
 import {
   getProjectsWithTags,
   createProject,
@@ -15,9 +16,14 @@ interface UseProjectsResult {
   isLoading: boolean;
   loadingStatus: string | null;
   error: Error | null;
+  showArchived: boolean;
   refetch: () => Promise<void>;
   addProject: (input: CreateProjectInput) => Promise<Project>;
   updateProjectTags: (projectId: string, tags: Tag[]) => void;
+  archiveProject: (id: string) => Promise<void>;
+  unarchiveProject: (id: string) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  toggleShowArchived: () => void;
 }
 
 export function useProjects(): UseProjectsResult {
@@ -25,8 +31,13 @@ export function useProjects(): UseProjectsResult {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const loadingRef = useRef(0);
   const beadsAbortRef = useRef<AbortController | null>(null);
+  const showArchivedRef = useRef(false);
+
+  // Keep ref in sync with state
+  useEffect(() => { showArchivedRef.current = showArchived; }, [showArchived]);
 
   const fetchProjects = useCallback(async () => {
     const loadId = ++loadingRef.current;
@@ -40,7 +51,7 @@ export function useProjects(): UseProjectsResult {
     try {
       setError(null);
 
-      const data = await getProjectsWithTags();
+      const data = await getProjectsWithTags(showArchivedRef.current);
       if (loadId !== loadingRef.current) return;
 
       // Show projects immediately, preserving existing bead counts from previous load
@@ -58,9 +69,12 @@ export function useProjects(): UseProjectsResult {
       beadsAbortRef.current = new AbortController();
       const beadsSignal = beadsAbortRef.current.signal;
 
+      // Skip beads loading for archived projects
+      const activeData = data.filter(p => !p.archivedAt);
+
       // Then load beads per-project, updating each as it completes
       let loaded = 0;
-      const total = data.length;
+      const total = activeData.length;
 
       const loadBeads = async (project: Project) => {
         try {
@@ -85,7 +99,7 @@ export function useProjects(): UseProjectsResult {
       // Limit concurrent beads requests to avoid overloading Dolt servers
       const MAX_CONCURRENT = 3;
       let running = 0;
-      let queue = [...data];
+      const queue = [...activeData];
 
       await new Promise<void>((resolve) => {
         const next = () => {
@@ -148,21 +162,45 @@ export function useProjects(): UseProjectsResult {
     );
   }, []);
 
-  // Fetch projects on mount
+  const archiveProject = useCallback(async (id: string) => {
+    await api.projects.archive(id);
+    await fetchProjects();
+  }, [fetchProjects]);
+
+  const unarchiveProject = useCallback(async (id: string) => {
+    await api.projects.unarchive(id);
+    await fetchProjects();
+  }, [fetchProjects]);
+
+  const deleteProject = useCallback(async (id: string) => {
+    await api.projects.delete(id);
+    await fetchProjects();
+  }, [fetchProjects]);
+
+  const toggleShowArchived = useCallback(() => {
+    setShowArchived(prev => !prev);
+  }, []);
+
+  // Fetch projects on mount and when showArchived changes
   useEffect(() => {
     fetchProjects();
     return () => {
       beadsAbortRef.current?.abort();
     };
-  }, [fetchProjects]);
+  }, [fetchProjects, showArchived]);
 
   return {
     projects,
     isLoading,
     loadingStatus,
     error,
+    showArchived,
     refetch: fetchProjects,
     addProject,
     updateProjectTags,
+    archiveProject,
+    unarchiveProject,
+    deleteProject,
+    toggleShowArchived,
   };
 }

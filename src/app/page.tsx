@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 
 
-import { Plus, Github, Search, X } from "lucide-react";
+import { Plus, Github, Search, X, Archive } from "lucide-react";
 
 import { AddProjectDialog } from "@/components/add-project-dialog";
 import { ProjectCard } from "@/components/project-card";
@@ -19,7 +19,7 @@ export default function ProjectsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  const { projects, isLoading, loadingStatus, error, addProject, updateProjectTags, refetch } = useProjects();
+  const { projects, isLoading, loadingStatus, error, showArchived, addProject, updateProjectTags, refetch, archiveProject, unarchiveProject, deleteProject, toggleShowArchived } = useProjects();
   const { toast } = useToast();
 
   // Get all unique tags across projects
@@ -248,10 +248,27 @@ export default function ProjectsPage() {
                   beadCounts={project.beadCounts}
                   dataSource={project.dataSource}
                   beadError={project.beadError}
+                  archivedAt={project.archivedAt}
                   onTagsChange={(tags) => updateProjectTags(project.id, tags)}
                   onUpdated={refetch}
+                  onArchive={() => archiveProject(project.id)}
+                  onUnarchive={() => unarchiveProject(project.id)}
+                  onDelete={() => deleteProject(project.id)}
                 />
               ))}
+            </div>
+          )}
+          {/* Archive toggle */}
+          {!isLoading && (
+            <div className="mt-6 flex items-center justify-center">
+              <button
+                type="button"
+                onClick={toggleShowArchived}
+                className="flex items-center gap-2 text-xs text-t-muted hover:text-t-secondary transition-colors"
+              >
+                <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+                {showArchived ? "Hide archived" : "Show archived"}
+              </button>
             </div>
           )}
         </div>

@@ -143,6 +143,9 @@ export async function getProjectWithTags(projectId: string): Promise<Project> {
 /**
  * Gets all projects with their tags
  */
-export async function getProjectsWithTags(): Promise<Project[]> {
+export async function getProjectsWithTags(includeArchived = false): Promise<Project[]> {
+  if (includeArchived) {
+    return api.projects.listAll();
+  }
   return getProjects();
 }

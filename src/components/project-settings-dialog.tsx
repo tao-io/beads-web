@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-import { Folder, FolderSearch, Loader2 } from "lucide-react";
+import { Archive, Folder, FolderSearch, Loader2, Trash2 } from "lucide-react";
 
 import { FolderBrowser } from "@/components/folder-browser";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,10 @@ interface ProjectSettingsDialogProps {
   projectName: string;
   projectPath: string;
   projectLocalPath?: string;
+  archivedAt?: string;
   onUpdated: () => void;
+  onArchive?: () => void;
+  onDelete?: () => void;
 }
 
 export function ProjectSettingsDialog({
@@ -35,7 +38,10 @@ export function ProjectSettingsDialog({
   projectName,
   projectPath,
   projectLocalPath,
+  archivedAt,
   onUpdated,
+  onArchive,
+  onDelete,
 }: ProjectSettingsDialogProps) {
   const [name, setName] = useState(projectName);
   const [path, setPath] = useState(projectPath);
@@ -277,18 +283,55 @@ export function ProjectSettingsDialog({
           </div>
 
           {!browsing && (
-            <DialogFooter>
-              <Button type="submit" disabled={isSubmitting || !name.trim()}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save"
-                )}
-              </Button>
-            </DialogFooter>
+            <>
+              {/* Archive / Delete actions */}
+              {(onArchive || onDelete) && (
+                <div className="flex items-center gap-2 border-t border-b-default pt-4 mt-4">
+                  {onArchive && !archivedAt && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { onArchive(); onOpenChange(false); }}
+                    >
+                      <Archive className="h-4 w-4" aria-hidden="true" />
+                      Archive
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        const confirmed = window.confirm(
+                          "Delete this project from the dashboard? Your beads data and files will not be affected."
+                        );
+                        if (confirmed) {
+                          onDelete();
+                          onOpenChange(false);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              )}
+              <DialogFooter>
+                <Button type="submit" disabled={isSubmitting || !name.trim()}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
           )}
         </form>
       </DialogContent>

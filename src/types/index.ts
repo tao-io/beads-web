@@ -19,6 +19,7 @@ export interface Project {
   tags: Tag[];
   lastOpened: string;
   createdAt: string;
+  archivedAt?: string;
   beadCounts?: BeadCounts;
   dataSource?: string;
   beadError?: string;

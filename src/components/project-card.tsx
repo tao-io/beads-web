@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { AlertTriangle, Code, FolderOpen, Loader2, Settings } from "lucide-react";
+import { AlertTriangle, Archive, ArchiveRestore, Code, FolderOpen, Loader2, Settings } from "lucide-react";
 
 import { ProjectSettingsDialog } from "@/components/project-settings-dialog";
 
@@ -55,8 +55,12 @@ interface ProjectCardProps {
   beadCounts?: BeadCounts;
   dataSource?: string;
   beadError?: string;
+  archivedAt?: string;
   onTagsChange?: (tags: Tag[]) => void;
   onUpdated?: () => void;
+  onArchive?: () => void;
+  onUnarchive?: () => void;
+  onDelete?: () => void;
 }
 
 export function ProjectCard({
@@ -68,8 +72,12 @@ export function ProjectCard({
   beadCounts = { open: 0, in_progress: 0, inreview: 0, closed: 0 },
   dataSource,
   beadError,
+  archivedAt,
   onTagsChange,
   onUpdated,
+  onArchive,
+  onUnarchive,
+  onDelete,
 }: ProjectCardProps) {
   const router = useRouter();
   const [isOpening, setIsOpening] = useState<string | null>(null);
@@ -112,7 +120,7 @@ export function ProjectCard({
   return (
     <>
     <RoiuiCard
-      className="cursor-pointer flex flex-col min-h-[155px]"
+      className={`cursor-pointer flex flex-col min-h-[155px]${archivedAt ? ' opacity-50' : ''}`}
       onClick={handleCardClick}
       role="link"
       tabIndex={0}
@@ -178,13 +186,19 @@ export function ProjectCard({
         </h3>
       </div>
 
-      {/* Bottom row: Path left, Open In button right (aligned) */}
+      {/* Bottom row: Path left, actions right */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <p className="text-sm text-t-muted truncate min-w-0" title={path}>
             {path}
           </p>
-          {dataSource && (
+          {archivedAt && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-overlay px-2 py-0.5 text-[10px] font-medium text-t-muted">
+              <Archive className="h-3 w-3" aria-hidden="true" />
+              Archived
+            </span>
+          )}
+          {!archivedAt && dataSource && (
             <span className="inline-flex shrink-0 items-center rounded-full bg-surface-overlay px-2 py-0.5 text-[10px] font-medium text-t-muted">
               {dataSource === 'dolt-project' ? 'Dolt (project)' :
                dataSource === 'dolt-central' ? 'Dolt (central)' :
@@ -195,88 +209,102 @@ export function ProjectCard({
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  mode="icon"
-                  className="shrink-0"
-                  aria-label="Project settings"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSettingsOpen(true);
-                  }}
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Project settings</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          {fsPath && (
-          <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <DropdownMenu>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
+          {archivedAt ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onUnarchive?.(); }}
+              aria-label="Restore project"
+            >
+              <ArchiveRestore className="h-4 w-4" aria-hidden="true" />
+              Restore
+            </Button>
+          ) : (
+            <>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
                       mode="icon"
-                      className="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      aria-label="Open in external application"
-                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0"
+                      aria-label="Project settings"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSettingsOpen(true);
+                      }}
                     >
-                      <FolderOpen className="h-4 w-4" />
+                      <Settings className="h-4 w-4" />
                     </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <p>Open in editor or file manager</p>
-                </TooltipContent>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => handleOpenExternal('vscode', e)}
-                    disabled={isOpening !== null}
-                  >
-                    {isOpening === 'vscode' ? (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <Code className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    VS Code
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => handleOpenExternal('cursor', e)}
-                    disabled={isOpening !== null}
-                  >
-                    {isOpening === 'cursor' ? (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <Code className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    Cursor
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => handleOpenExternal('finder', e)}
-                    disabled={isOpening !== null}
-                  >
-                    {isOpening === 'finder' ? (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <FolderOpen className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    {getFileManagerName()}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </Tooltip>
-          </TooltipProvider>
-        )}
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Project settings</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {fsPath && (
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <DropdownMenu>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          mode="icon"
+                          className="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                          aria-label="Open in external application"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <FolderOpen className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Open in editor or file manager</p>
+                    </TooltipContent>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => handleOpenExternal('vscode', e)}
+                        disabled={isOpening !== null}
+                      >
+                        {isOpening === 'vscode' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Code className="h-4 w-4" aria-hidden="true" />
+                        )}
+                        VS Code
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => handleOpenExternal('cursor', e)}
+                        disabled={isOpening !== null}
+                      >
+                        {isOpening === 'cursor' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Code className="h-4 w-4" aria-hidden="true" />
+                        )}
+                        Cursor
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => handleOpenExternal('finder', e)}
+                        disabled={isOpening !== null}
+                      >
+                        {isOpening === 'finder' ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <FolderOpen className="h-4 w-4" aria-hidden="true" />
+                        )}
+                        {getFileManagerName()}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            </>
+          )}
         </div>
       </div>
 
@@ -288,7 +316,10 @@ export function ProjectCard({
       projectName={name}
       projectPath={path}
       projectLocalPath={localPath}
+      archivedAt={archivedAt}
       onUpdated={onUpdated ?? (() => {})}
+      onArchive={onArchive}
+      onDelete={onDelete}
     />
     </>
   );

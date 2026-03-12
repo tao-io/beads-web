@@ -79,6 +79,10 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
     } catch { /* no JSON body */ }
     throw new Error(`API error: ${res.status} ${detail}`);
   }
+  // Handle 204 No Content (archive/unarchive/delete endpoints)
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
   return res.json();
 }
 
@@ -99,6 +103,12 @@ export const projects = {
   }),
 
   delete: (id: string) => fetchApi<void>(`/api/projects/${id}`, { method: 'DELETE' }),
+
+  archive: (id: string) => fetchApi<void>(`/api/projects/${id}/archive`, { method: 'PATCH' }),
+
+  unarchive: (id: string) => fetchApi<void>(`/api/projects/${id}/unarchive`, { method: 'PATCH' }),
+
+  listAll: () => fetchApi<Project[]>('/api/projects?include_archived=true'),
 };
 
 /**
