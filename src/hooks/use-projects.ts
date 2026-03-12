@@ -74,10 +74,11 @@ export function useProjects(): UseProjectsResult {
             inreview: grouped.inreview.length,
             closed: grouped.closed.length,
           };
-          return { id: project.id, beadCounts, dataSource: result.source };
+          return { id: project.id, beadCounts, dataSource: result.source, beadError: undefined };
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') return null;
-          return { id: project.id, beadCounts: zeroCounts, dataSource: undefined };
+          const message = err instanceof Error ? err.message : 'Unknown error';
+          return { id: project.id, beadCounts: zeroCounts, dataSource: undefined, beadError: message };
         }
       };
 
@@ -96,7 +97,7 @@ export function useProjects(): UseProjectsResult {
         setProjects((prev) =>
           prev.map((p) =>
             p.id === result.id
-              ? { ...p, beadCounts: result.beadCounts, dataSource: result.dataSource }
+              ? { ...p, beadCounts: result.beadCounts, dataSource: result.dataSource, beadError: result.beadError }
               : p
           )
         );

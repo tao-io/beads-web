@@ -21,6 +21,7 @@ export interface Project {
   createdAt: string;
   beadCounts?: BeadCounts;
   dataSource?: string;
+  beadError?: string;
 }
 
 /**

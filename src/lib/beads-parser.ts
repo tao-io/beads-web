@@ -112,39 +112,32 @@ export interface LoadProjectBeadsResult {
 export async function loadProjectBeads(projectPath: string): Promise<Bead[]>;
 export async function loadProjectBeads(projectPath: string, options: { withSource: true }): Promise<LoadProjectBeadsResult>;
 export async function loadProjectBeads(projectPath: string, options?: { withSource: true }): Promise<Bead[] | LoadProjectBeadsResult> {
-  try {
-    const result = await api.beads.read(projectPath);
-    // Map statuses, filter tombstones, ensure comments array
-    const mapped: Bead[] = [];
-    for (const bead of result.beads) {
-      const withComments = { ...bead, comments: bead.comments ?? [] };
-      const mappedBead = mapBeadStatus(withComments);
-      if (mappedBead !== null) {
-        mapped.push(mappedBead);
-      }
+  const result = await api.beads.read(projectPath);
+  // Map statuses, filter tombstones, ensure comments array
+  const mapped: Bead[] = [];
+  for (const bead of result.beads) {
+    const withComments = { ...bead, comments: bead.comments ?? [] };
+    const mappedBead = mapBeadStatus(withComments);
+    if (mappedBead !== null) {
+      mapped.push(mappedBead);
     }
-    if (options?.withSource) {
-      return { beads: mapped, source: result.source };
-    }
-    return mapped;
-  } catch (error) {
-    // 404 is normal for projects without beads data — don't pollute console
-    const is404 = error instanceof Error && error.message.includes('404');
-    if (!is404) {
-      console.warn(`Failed to load beads from ${projectPath}:`, error);
-    }
-    if (options?.withSource) {
-      return { beads: [], source: undefined };
-    }
-    return [];
   }
+  if (options?.withSource) {
+    return { beads: mapped, source: result.source };
+  }
+  return mapped;
 }
 
 /**
  * Alias for loadProjectBeads for backward compatibility
  */
 export async function parseBeadsFromPath(projectPath: string): Promise<Bead[]> {
-  return loadProjectBeads(projectPath);
+  try {
+    return await loadProjectBeads(projectPath);
+  } catch (error) {
+    console.error(`Failed to load beads from ${projectPath}:`, error);
+    return [];
+  }
 }
 
 /**
