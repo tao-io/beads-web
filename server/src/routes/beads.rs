@@ -329,7 +329,16 @@ pub async fn read_beads(
     if port_file.exists() {
         if let Ok(port_str) = std::fs::read_to_string(&port_file) {
             if let Ok(port) = port_str.trim().parse::<u16>() {
-                if let Some(db_name) = dolt::database_name_for_project(&project_path) {
+                // Try known db name first, then discover via SHOW DATABASES
+                let db_name = match dolt::database_name_for_project(&project_path) {
+                    Some(name) => Some(name),
+                    None => {
+                        tracing::info!("No db name from metadata for port {}, discovering...", port);
+                        dolt::discover_database_on_port(port).await.ok()
+                    }
+                };
+
+                if let Some(db_name) = db_name {
                     tracing::info!("Trying per-project Dolt server on port {} for db {}", port, db_name);
                     match dolt::read_beads_on_port(port, &db_name).await {
                         Ok(beads) => {

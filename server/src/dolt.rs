@@ -285,6 +285,61 @@ pub async fn read_beads_on_port(port: u16, db_name: &str) -> Result<Vec<Bead>, D
     Ok(beads)
 }
 
+/// Discover the beads database name by connecting to a Dolt server and looking
+/// for a database that has an `issues` table.
+pub async fn discover_database_on_port(port: u16) -> Result<String, DoltError> {
+    let pool_opts = PoolOpts::default()
+        .with_constraints(PoolConstraints::new(0, 2).unwrap());
+
+    let opts: Opts = OptsBuilder::default()
+        .ip_or_hostname(DOLT_HOST)
+        .tcp_port(port)
+        .user(Some(DOLT_USER))
+        .pool_opts(pool_opts)
+        .into();
+
+    let pool = Pool::new(opts);
+    let mut conn = pool.get_conn().await
+        .map_err(|e| DoltError::ConnectionFailed(e.to_string()))?;
+
+    // Get all databases, excluding system ones
+    let rows: Vec<Row> = conn.query("SHOW DATABASES").await
+        .map_err(|e| DoltError::QueryFailed(e.to_string()))?;
+
+    let system_dbs = ["information_schema", "mysql", "dolt_cluster"];
+    let mut db_names: Vec<String> = Vec::new();
+    for row in rows {
+        let db: String = row.get(0).unwrap_or_default();
+        if !system_dbs.contains(&db.as_str()) {
+            db_names.push(db);
+        }
+    }
+
+    // Try each database — look for one with an `issues` table
+    for db_name in &db_names {
+        let query = format!(
+            "SELECT COUNT(*) FROM `{}`.`issues` LIMIT 1",
+            db_name.replace('`', "``")
+        );
+        match conn.query_first::<i64, _>(&query).await {
+            Ok(Some(_)) => {
+                tracing::info!("Discovered beads database '{}' on port {}", db_name, port);
+                drop(conn);
+                let _ = pool.disconnect().await;
+                return Ok(db_name.clone());
+            }
+            _ => continue,
+        }
+    }
+
+    drop(conn);
+    let _ = pool.disconnect().await;
+    Err(DoltError::DatabaseNotFound(format!(
+        "No database with issues table found on port {}",
+        port
+    )))
+}
+
 /// Shared logic for reading beads from a Dolt MySQL connection.
 ///
 /// Reads issues, comments, and dependencies from the given database,
