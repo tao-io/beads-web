@@ -247,6 +247,7 @@ export default function ProjectsPage() {
                   tags={project.tags}
                   beadCounts={project.beadCounts}
                   dataSource={project.dataSource}
+                  beadError={project.beadError}
                   onTagsChange={(tags) => updateProjectTags(project.id, tags)}
                   onUpdated={refetch}
                 />

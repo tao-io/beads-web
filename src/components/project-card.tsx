@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { Code, FolderOpen, Loader2, Settings } from "lucide-react";
+import { AlertTriangle, Code, FolderOpen, Loader2, Settings } from "lucide-react";
 
 import { ProjectSettingsDialog } from "@/components/project-settings-dialog";
 
@@ -54,6 +54,7 @@ interface ProjectCardProps {
   tags: Tag[];
   beadCounts?: BeadCounts;
   dataSource?: string;
+  beadError?: string;
   onTagsChange?: (tags: Tag[]) => void;
   onUpdated?: () => void;
 }
@@ -66,6 +67,7 @@ export function ProjectCard({
   tags,
   beadCounts = { open: 0, in_progress: 0, inreview: 0, closed: 0 },
   dataSource,
+  beadError,
   onTagsChange,
   onUpdated,
 }: ProjectCardProps) {
@@ -124,7 +126,22 @@ export function ProjectCard({
     >
       {/* Top row: Donut left, Tags right */}
       <div className="flex items-start justify-between">
-        <StatusDonut beadCounts={beadCounts} size={36} />
+        {beadError ? (
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 text-warning" style={{ width: 36, height: 36 }}>
+                  <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p className="text-xs">{beadError}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <StatusDonut beadCounts={beadCounts} size={36} />
+        )}
         <div
           className="flex flex-wrap items-center gap-1.5"
           onClick={(e) => e.stopPropagation()}
