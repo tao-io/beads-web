@@ -151,7 +151,7 @@ async fn main() {
     // Build the router
     let app = Router::new()
         .route("/api/health", get(routes::health))
-        .nest("/api", routes::project_routes().with_state(database))
+        .nest("/api", routes::project_routes().with_state(database.clone()))
         .route("/api/beads", get(routes::beads::read_beads))
         .route("/api/beads/create", post(routes::beads::create_bead_handler))
         .route("/api/beads/update", patch(routes::beads::update_bead_handler))
@@ -192,6 +192,7 @@ async fn main() {
         .route("/api/version/check", get(routes::version::version_check))
         .fallback(serve_static)
         .layer(Extension(version_cache))
+        .layer(Extension(database))
         .layer(Extension(dolt_manager))
         .layer(cors);
 

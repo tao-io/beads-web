@@ -143,18 +143,21 @@ export function AddProjectDialog({
     (db) => !existingNamesLower.includes(db.project_name.toLowerCase())
   );
 
-  // Filter out per-project servers already added (by name)
-  const newDoltServers = doltServers.filter(
-    (s) => !existingNamesLower.includes(
-      s.project_path.split(/[/\\]/).pop()?.toLowerCase() || ""
-    )
-  );
+  // Filter out per-project servers already added (by folder name or db_name)
+  const newDoltServers = doltServers.filter((s) => {
+    const folderName = s.project_path ? s.project_path.split(/[/\\]/).pop()?.toLowerCase() : "";
+    const dbName = s.db_name?.toLowerCase() || "";
+    return !existingNamesLower.includes(folderName || "") &&
+      (!dbName || !existingNamesLower.includes(dbName));
+  });
 
   const handleServerQuickAdd = async (server: DoltServer) => {
     setIsSubmitting(true);
     try {
       const pathParts = server.project_path.split(/[/\\]/);
-      const name = pathParts[pathParts.length - 1] || "Untitled";
+      const name = (server.project_path && pathParts[pathParts.length - 1])
+        || server.db_name
+        || `Port ${server.port}`;
       await onAddProject({
         name,
         path: server.project_path,
@@ -270,7 +273,9 @@ export function AddProjectDialog({
                 <div className="space-y-1.5">
                   {newDoltServers.map((server) => {
                     const pathParts = server.project_path.split(/[/\\]/);
-                    const name = pathParts[pathParts.length - 1] || "Unknown";
+                    const name = (server.project_path && pathParts[pathParts.length - 1])
+                      || server.db_name
+                      || `Port ${server.port}`;
                     return (
                       <button
                         key={`${server.pid}-${server.port}`}

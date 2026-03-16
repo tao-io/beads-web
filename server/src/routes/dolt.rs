@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::db::Database;
 use crate::dolt::{self, DoltManager};
 
 /// GET /api/dolt/status
@@ -63,14 +64,81 @@ pub struct DoltServer {
 /// GET /api/dolt/servers
 ///
 /// Scans running OS processes for Dolt SQL servers and returns their details.
-pub async fn dolt_servers() -> impl IntoResponse {
-    let servers = match scan_dolt_processes().await {
+/// Enriches results by matching ports to registered projects via port files,
+/// and falls back to SHOW DATABASES for unmatched servers.
+pub async fn dolt_servers(
+    Extension(db): Extension<Arc<Database>>,
+) -> impl IntoResponse {
+    let mut servers = match scan_dolt_processes().await {
         Ok(s) => s,
         Err(e) => {
             tracing::warn!("Failed to scan dolt processes: {}", e);
             Vec::new()
         }
     };
+
+    // Step 1: Get all registered projects (including archived)
+    let projects = db.get_projects_filtered(true).unwrap_or_default();
+
+    // Step 2: Build port -> project_path map from .beads/dolt-server.port files
+    let mut port_to_path: std::collections::HashMap<u16, String> =
+        std::collections::HashMap::new();
+    for project in &projects {
+        if project.path.is_empty() || project.path.starts_with("dolt://") {
+            continue;
+        }
+        let port_file = format!(
+            "{}/.beads/dolt-server.port",
+            project.path.replace('\\', "/")
+        );
+        if let Ok(content) = tokio::fs::read_to_string(&port_file).await {
+            if let Ok(port) = content.trim().parse::<u16>() {
+                port_to_path.insert(port, project.path.clone());
+            }
+        }
+    }
+
+    // Step 3: Enrich servers with project paths from port files
+    for server in &mut servers {
+        if let Some(path) = port_to_path.get(&server.port) {
+            server.project_path = path.clone();
+            let p = std::path::Path::new(path);
+            server.db_name = dolt::database_name_for_project(p);
+        }
+    }
+
+    // Step 4: For servers still without project_path, try SHOW DATABASES with timeout
+    use tokio::time::{timeout, Duration};
+
+    let indices: Vec<usize> = servers
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.project_path.is_empty() && s.db_name.is_none())
+        .map(|(i, _)| i)
+        .collect();
+
+    let futures: Vec<_> = indices
+        .iter()
+        .map(|&idx| {
+            let port = servers[idx].port;
+            async move {
+                match timeout(
+                    Duration::from_secs(2),
+                    dolt::discover_database_on_port(port),
+                )
+                .await
+                {
+                    Ok(Ok(name)) => (idx, Some(name)),
+                    _ => (idx, None),
+                }
+            }
+        })
+        .collect();
+
+    let results = futures::future::join_all(futures).await;
+    for (idx, db_name) in results {
+        servers[idx].db_name = db_name;
+    }
 
     tracing::info!("Discovered {} running Dolt server(s)", servers.len());
     Json(serde_json::json!({ "servers": servers }))

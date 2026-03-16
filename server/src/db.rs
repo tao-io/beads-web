@@ -540,7 +540,7 @@ mod tests {
         assert_eq!(project.name, "Test Project");
         assert_eq!(project.path, "/path/to/project");
 
-        let projects = db.get_projects().unwrap();
+        let projects = db.get_projects_filtered(false).unwrap();
         assert_eq!(projects.len(), 1);
         assert_eq!(projects[0].id, project.id);
     }
@@ -586,7 +586,7 @@ mod tests {
 
         db.delete_project(&project.id).unwrap();
 
-        let projects = db.get_projects().unwrap();
+        let projects = db.get_projects_filtered(false).unwrap();
         assert!(projects.is_empty());
     }
 
@@ -690,7 +690,7 @@ mod tests {
 
         db.add_tag_to_project(&project.id, &tag.id).unwrap();
 
-        let projects = db.get_projects_with_tags().unwrap();
+        let projects = db.get_projects_with_tags_filtered(false).unwrap();
         assert_eq!(projects.len(), 1);
         assert_eq!(projects[0].tags.len(), 1);
         assert_eq!(projects[0].tags[0].name, "Tag1");
