@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 PORT="${PORT:-3008}"
@@ -87,10 +87,18 @@ BD_OUT1=$(bd create --title="Test task one" --type=task 2>&1) || true
 BD_OUT2=$(bd create --title="Test bug two" --type=bug 2>&1) || true
 BD_OUT3=$(bd create --title="Test epic three" --type=epic 2>&1) || true
 
-# Extract bead IDs from bd output
-BEAD_ID1=$(echo "$BD_OUT1" | parse_json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
-BEAD_ID2=$(echo "$BD_OUT2" | parse_json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
-BEAD_ID3=$(echo "$BD_OUT3" | parse_json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
+# Extract bead IDs from bd output (format: "✓ Created issue: PREFIX-xxx — Title")
+extract_bead_id() {
+    echo "$1" | python3 -c "
+import sys, re
+text = sys.stdin.read()
+m = re.search(r'Created issue:\s*(\S+)', text) or re.search(r'([a-zA-Z0-9_-]+-[a-zA-Z0-9]+)', text)
+print(m.group(1) if m else '')
+"
+}
+BEAD_ID1=$(extract_bead_id "$BD_OUT1")
+BEAD_ID2=$(extract_bead_id "$BD_OUT2")
+BEAD_ID3=$(extract_bead_id "$BD_OUT3")
 
 echo "  Created beads: [$BEAD_ID1] [$BEAD_ID2] [$BEAD_ID3]"
 
@@ -127,7 +135,8 @@ test_1_get_beads() {
         fail "$name" "expected HTTP 200, got $status"
         return
     fi
-    python3 -c "
+    local result
+    result=$(python3 -c "
 import json, sys
 with open('/tmp/t1.json') as f:
     data = json.load(f)
@@ -140,11 +149,11 @@ for b in beads:
         if field not in b:
             print(f'FAIL: bead missing field: {field}', file=sys.stderr)
             sys.exit(1)
-" 2>&1
+" 2>&1)
     if [[ $? -eq 0 ]]; then
         pass "$name"
     else
-        fail "$name" "$(cat /dev/stderr 2>/dev/null || echo 'validation failed')"
+        fail "$name" "$result"
     fi
 }
 
@@ -158,7 +167,8 @@ test_2_future_date() {
         fail "$name" "expected HTTP 200, got $status"
         return
     fi
-    python3 -c "
+    local result
+    result=$(python3 -c "
 import json, sys
 with open('/tmp/t2.json') as f:
     data = json.load(f)
@@ -166,11 +176,11 @@ beads = data.get('beads', [])
 if len(beads) != 0:
     print(f'expected 0 beads, got {len(beads)}', file=sys.stderr)
     sys.exit(1)
-" 2>&1
+" 2>&1)
     if [[ $? -eq 0 ]]; then
         pass "$name"
     else
-        fail "$name" "validation failed"
+        fail "$name" "$result"
     fi
 }
 
@@ -184,7 +194,8 @@ test_3_past_date() {
         fail "$name" "expected HTTP 200, got $status"
         return
     fi
-    python3 -c "
+    local result
+    result=$(python3 -c "
 import json, sys
 with open('/tmp/t3.json') as f:
     data = json.load(f)
@@ -192,11 +203,11 @@ beads = data.get('beads', [])
 if len(beads) < 3:
     print(f'expected >= 3 beads, got {len(beads)}', file=sys.stderr)
     sys.exit(1)
-" 2>&1
+" 2>&1)
     if [[ $? -eq 0 ]]; then
         pass "$name"
     else
-        fail "$name" "validation failed"
+        fail "$name" "$result"
     fi
 }
 
@@ -248,7 +259,8 @@ test_6_created_bead_visible() {
         fail "$name" "expected HTTP 200, got $status"
         return
     fi
-    python3 -c "
+    local result
+    result=$(python3 -c "
 import json, sys
 with open('/tmp/t6.json') as f:
     data = json.load(f)
@@ -257,11 +269,11 @@ titles = [b.get('title','') for b in beads]
 if 'Integration test bead' not in titles:
     print(f'created bead not found in list, titles: {titles}', file=sys.stderr)
     sys.exit(1)
-" 2>&1
+" 2>&1)
     if [[ $? -eq 0 ]]; then
         pass "$name"
     else
-        fail "$name" "created bead not found"
+        fail "$name" "$result"
     fi
 }
 
@@ -299,7 +311,8 @@ test_8_status_reflected() {
         fail "$name" "expected HTTP 200, got $status"
         return
     fi
-    python3 -c "
+    local result
+    result=$(python3 -c "
 import json, sys
 bead_id = '${bead_id}'
 with open('/tmp/t8.json') as f:
@@ -312,11 +325,11 @@ if not found:
 if found[0].get('status') != 'in_progress':
     print(f'expected in_progress, got {found[0].get(\"status\")}', file=sys.stderr)
     sys.exit(1)
-" 2>&1
+" 2>&1)
     if [[ $? -eq 0 ]]; then
         pass "$name"
     else
-        fail "$name" "status not updated"
+        fail "$name" "$result"
     fi
 }
 

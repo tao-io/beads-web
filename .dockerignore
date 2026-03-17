@@ -1,0 +1,12 @@
+node_modules
+.git
+.beads
+.worktrees
+.claude/worktrees
+out
+server/target
+*.md
+!README.md
+screenshots
+logo
+beads_*-backup-*
