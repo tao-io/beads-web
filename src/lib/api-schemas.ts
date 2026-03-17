@@ -6,7 +6,7 @@
 import { z } from "zod/v4";
 
 export const CommentSchema = z.object({
-  id: z.number(),
+  id: z.union([z.number(), z.string()]),
   issue_id: z.string(),
   author: z.string(),
   text: z.string(),

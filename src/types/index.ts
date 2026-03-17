@@ -115,7 +115,7 @@ export interface Bead {
  * Comment from .beads/issues.jsonl
  */
 export interface Comment {
-  id: number;
+  id: number | string;
   issue_id: string;
   author: string;
   text: string;
