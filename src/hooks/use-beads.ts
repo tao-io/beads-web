@@ -115,8 +115,12 @@ export function useBeads(projectPath: string): UseBeadsResult {
       hasLoadedRef.current = true;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      setError(error);
-      console.error("Failed to load beads:", error);
+      if (hasLoadedRef.current) {
+        console.warn("Beads refresh failed (non-fatal):", error.message);
+      } else {
+        setError(error);
+        console.error("Failed to load beads:", error);
+      }
     } finally {
       setIsLoading(false);
     }
