@@ -157,7 +157,11 @@ async fn check_github_release() -> VersionCheckResponse {
         download_url: Some(release.html_url),
         release_notes: release.body.map(|b| {
             if b.len() > 500 {
-                format!("{}…", &b[..500])
+                let mut end = 500;
+                while !b.is_char_boundary(end) && end > 0 {
+                    end -= 1;
+                }
+                format!("{}…", &b[..end])
             } else {
                 b
             }
