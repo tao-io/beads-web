@@ -424,27 +424,37 @@ pub async fn read_beads(
 
     // Tier 0: Try per-project Dolt server via port file or log
     if let Some(port) = resolve_dolt_port(&beads_dir) {
-        // Try known db name first, then discover via SHOW DATABASES
-        let db_name = match dolt::database_name_for_project(&project_path) {
-            Some(name) => Some(name),
-            None => {
-                tracing::info!("No db name from metadata for port {}, discovering...", port);
-                dolt::discover_database_on_port(port).await.ok()
-            }
-        };
+        // Quick TCP probe: skip Tier 0 if port is dead (avoids slow SQL timeout)
+        let port_alive = tokio::time::timeout(
+            std::time::Duration::from_millis(500),
+            tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port)),
+        ).await.map(|r| r.is_ok()).unwrap_or(false);
 
-        if let Some(db_name) = db_name {
-            tracing::info!("Trying per-project Dolt server on port {} for db {}", port, db_name);
-            match dolt::read_beads_on_port(port, &db_name).await {
-                Ok(beads) => {
-                    tracing::info!("Read {} beads from per-project Dolt (port {})", beads.len(), port);
-                    let beads = post_process_beads(beads);
-                    return (StatusCode::OK, Json(serde_json::json!({ "beads": beads, "source": "dolt-project" })));
+        if port_alive {
+            // Try known db name first, then discover via SHOW DATABASES
+            let db_name = match dolt::database_name_for_project(&project_path) {
+                Some(name) => Some(name),
+                None => {
+                    tracing::info!("No db name from metadata for port {}, discovering...", port);
+                    dolt::discover_database_on_port(port).await.ok()
                 }
-                Err(e) => {
-                    tracing::warn!("Per-project Dolt server on port {} failed: {}, falling back", port, e);
+            };
+
+            if let Some(db_name) = db_name {
+                tracing::info!("Trying per-project Dolt server on port {} for db {}", port, db_name);
+                match dolt::read_beads_on_port(port, &db_name).await {
+                    Ok(beads) => {
+                        tracing::info!("Read {} beads from per-project Dolt (port {})", beads.len(), port);
+                        let beads = post_process_beads(beads);
+                        return (StatusCode::OK, Json(serde_json::json!({ "beads": beads, "source": "dolt-project" })));
+                    }
+                    Err(e) => {
+                        tracing::warn!("Per-project Dolt server on port {} failed: {}, falling back", port, e);
+                    }
                 }
             }
+        } else {
+            tracing::debug!("Port {} not responding, skipping Tier 0 SQL", port);
         }
     }
 
